@@ -1,0 +1,177 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background-color: #f0f0f0; /* Záložní barva */
+    position: relative;
+    overflow: hidden;
+    color: #333;
+}
+
+/* Styl mapového pozadí */
+.background-map {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    /* Simulace pozadí z obrázku: Použijte skutečný obrázek, pokud ho máte! */
+    background-image: url('cesta_k_obrazku_mapy.jpg'); /* ZMĚŇTE NA CESTU K VAŠÍ MAPĚ */
+    background-size: cover;
+    background-position: center;
+    filter: brightness(0.4) grayscale(100%); /* Ztmaví a odbarví mapu */
+    z-index: 0;
+}
+
+/* Kontejner uprostřed obrazovky */
+.login-container {
+    z-index: 10;
+    text-align: center;
+    max-width: 400px;
+    width: 90%;
+}
+
+/* Logo (ikona kompasu) */
+.logo-box {
+    background-color: white;
+    border-radius: 50%;
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+.logo-icon {
+    font-size: 40px;
+}
+
+/* Textové prvky */
+.app-title {
+    color: white;
+    font-size: 36px;
+    margin: 0;
+    font-weight: bold;
+    letter-spacing: 2px;
+}
+
+.subtitle {
+    color: rgba(255, 255, 255, 0.8);
+    margin: 5px 0 30px;
+    font-size: 16px;
+}
+
+/* Box s přihlašovacími volbami */
+.login-box {
+    background-color: white;
+    padding: 30px 20px;
+    border-radius: 8px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+}
+
+.login-box h2 {
+    font-size: 24px;
+    margin-top: 0;
+    color: #333;
+}
+
+.login-box p {
+    color: #666;
+    margin-bottom: 25px;
+}
+
+/* Styly pro tlačítka */
+.btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px 20px;
+    margin-bottom: 15px;
+    border-radius: 4px;
+    text-decoration: none;
+    font-weight: bold;
+    transition: background-color 0.2s;
+    font-size: 16px;
+    border: none;
+    cursor: pointer;
+}
+
+.btn i {
+    margin-right: 10px;
+    font-size: 18px;
+}
+
+/* Google Tlačítko (podobné stylu na obrázku) */
+.google-btn {
+    background-color: white;
+    color: #4285F4; /* Barva Google */
+    border: 1px solid #ccc;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.google-btn:hover {
+    background-color: #f5f5f5;
+}
+
+/* Anonymní Tlačítko (oranžová barva) */
+.anonymous-btn {
+    background-color: #f7931e; /* Oranžová */
+    color: white;
+    margin-top: 15px; /* Více místa po oddělovači */
+}
+
+.anonymous-btn:hover {
+    background-color: #e57e00;
+}
+
+/* Oddělovač "NEBO" */
+.separator {
+    display: flex;
+    align-items: center;
+    text-align: center;
+    color: #aaa;
+    margin: 20px 0;
+    font-size: 12px;
+}
+
+.separator::before,
+.separator::after {
+    content: '';
+    flex: 1;
+    border-bottom: 1px solid #eee;
+}
+
+.separator:not(:empty)::before {
+    margin-right: .5em;
+}
+
+.separator:not(:empty)::after {
+    margin-left: .5em;
+}
+
+/* Poznámky a podmínky */
+.note {
+    font-size: 12px;
+    color: #888;
+    margin-top: 5px;
+    margin-bottom: 15px;
+}
+
+.terms {
+    font-size: 11px;
+    color: #aaa;
+    margin-bottom: 0;
+}
+
+.terms a {
+    color: #aaa;
+    text-decoration: underline;
+}
+
+/* Odstraněno Facebook tlačítko, aby odpovídalo požadavku */
