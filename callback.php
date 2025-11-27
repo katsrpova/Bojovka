@@ -36,7 +36,7 @@ if (empty($_GET['state']) || ($_GET['state'] !== $_SESSION['oauth2state'])) {
             'code' => $_GET['code']
         ]);
 
-        // 5. Získání informací o uživateli (Resource Owner)
+        // 5. Získání informací o uživateli (Resource Owwner)
         $user = $provider->getResourceOwner($token);
 
         // --- ÚSPĚŠNÉ PŘIHLÁŠENÍ ---
