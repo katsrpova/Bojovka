@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => '__root__',
-        'pretty_version' => '1.0.0+no-version-set',
-        'version' => '1.0.0.0',
-        'reference' => null,
+        'pretty_version' => 'dev-main',
+        'version' => 'dev-main',
+        'reference' => '3e4b74334db6031f132bea9fd78e53c2809f65a5',
         'type' => 'library',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -11,9 +11,9 @@
     ),
     'versions' => array(
         '__root__' => array(
-            'pretty_version' => '1.0.0+no-version-set',
-            'version' => '1.0.0.0',
-            'reference' => null,
+            'pretty_version' => 'dev-main',
+            'version' => 'dev-main',
+            'reference' => '3e4b74334db6031f132bea9fd78e53c2809f65a5',
             'type' => 'library',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'league/oauth2-client' => array(
-            'pretty_version' => '2.8.1',
-            'version' => '2.8.1.0',
-            'reference' => '9df2924ca644736c835fc60466a3a60390d334f9',
+            'pretty_version' => '2.9.0',
+            'version' => '2.9.0.0',
+            'reference' => '26e8c5da4f3d78cede7021e09b1330a0fc093d5e',
             'type' => 'library',
             'install_path' => __DIR__ . '/../league/oauth2-client',
             'aliases' => array(),
