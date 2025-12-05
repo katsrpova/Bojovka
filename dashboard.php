@@ -52,8 +52,8 @@ $adventures = [
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BOJOVKA - Discover Adventures</title>
-    <link rel="stylesheet" href="css/dashboard.css">
+    <title>BOJOVKA - Dashboard</title>
+    <link rel="stylesheet" href="dashboard.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
@@ -79,6 +79,22 @@ $adventures = [
             </div>
         </div>
     </header>
+
+    <!-- Top Navigation Tabs -->
+    <nav class="top-nav">
+        <a href="dashboard.php" class="nav-tab active">
+            <i class="fas fa-map"></i>
+            <span>Procházet</span>
+        </a>
+        <a href="create.php" class="nav-tab">
+            <i class="fas fa-plus-circle"></i>
+            <span>Vytvořit</span>
+        </a>
+        <a href="profile.php" class="nav-tab">
+            <i class="fas fa-user"></i>
+            <span>Profil</span>
+        </a>
+    </nav>
 
     <!-- Main Content -->
     <main class="main-content">
@@ -133,22 +149,6 @@ $adventures = [
         </div>
     </main>
 
-    <!-- Bottom Navigation -->
-    <nav class="bottom-nav">
-        <a href="dashboard.php" class="nav-item active">
-            <i class="fas fa-map"></i>
-            <span>Procházet</span>
-        </a>
-        <a href="create.php" class="nav-item">
-            <i class="fas fa-plus-circle"></i>
-            <span>Vytvořit</span>
-        </a>
-        <a href="profile.php" class="nav-item">
-            <i class="fas fa-user"></i>
-            <span>Profil</span>
-        </a>
-    </nav>
-
-    <script src="js/dashboard.js"></script>
+    <script src="dashboard.js"></script>
 </body>
 </html>
