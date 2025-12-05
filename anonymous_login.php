@@ -28,6 +28,6 @@ $_SESSION['user_email'] = '';
 $_SESSION['is_anonymous'] = true;
 
 // Přesměruj na dashboard
-header('Location: dashboard.php');
+header('Location: profile.php');
 exit;
 ?>
