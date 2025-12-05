@@ -27,7 +27,7 @@ $_SESSION['user_name'] = $anonymousName;
 $_SESSION['user_email'] = '';
 $_SESSION['is_anonymous'] = true;
 
-// Přesměruj na hlavní stránku hry
-header('Location: game.php');
+// Přesměruj na dashboard
+header('Location: dashboard.php');
 exit;
 ?>
