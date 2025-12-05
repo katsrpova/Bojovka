@@ -33,9 +33,10 @@ $friends = [
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BOJOVKA - Profil</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="style_profile.css">
 </head>
-<body>
-    <!-- Header -->
+<!--<body>
+     Header 
     <div class="header">
         <div class="logo-section">
             <div class="logo-icon">🧭</div>
@@ -54,6 +55,7 @@ $friends = [
             </a>
         </div>
     </div>
+    -->
 
     <!-- Navigation -->
     <div class="nav-tabs">

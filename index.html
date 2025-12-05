@@ -3,41 +3,390 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BOJOVKA - Vítejte!</title>
-    <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <title>BOJOVKA - Location-Based Adventure Game</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #8B4513 0%, #D2691E 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" opacity="0.1"><path d="M100 400 Q 300 200, 500 400 T 900 400" stroke="%23000" fill="none" stroke-width="2"/></svg>');
+            opacity: 0.3;
+            z-index: 0;
+        }
+
+        .container {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 500px;
+        }
+
+        /* Login Screen */
+        .login-screen {
+            background: rgba(139, 69, 19, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px 30px;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .logo {
+            width: 80px;
+            height: 80px;
+            background: white;
+            border-radius: 50%;
+            margin: 0 auto 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+        }
+
+        h1 {
+            color: white;
+            font-size: 48px;
+            margin-bottom: 10px;
+            letter-spacing: 2px;
+        }
+
+        .subtitle {
+            color: rgba(255,255,255,0.8);
+            font-size: 16px;
+            margin-bottom: 40px;
+        }
+
+        .login-box {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+        }
+
+        .login-box h2 {
+            font-size: 24px;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .login-box p {
+            color: #666;
+            margin-bottom: 25px;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 15px;
+            transition: all 0.3s;
+            text-decoration: none;
+        }
+
+        .google-btn {
+            background: white;
+            color: #4285F4;
+            border: 2px solid #ddd;
+        }
+
+        .google-btn:hover {
+            background: #f5f5f5;
+        }
+
+        .facebook-btn {
+            background: #1877F2;
+            color: white;
+        }
+
+        .facebook-btn:hover {
+            background: #145dbf;
+        }
+
+        .anonymous-btn {
+            background: #f7931e;
+            color: white;
+        }
+
+        .anonymous-btn:hover {
+            background: #d47a0a;
+        }
+
+        .separator {
+            text-align: center;
+            margin: 20px 0;
+            color: #999;
+            font-size: 14px;
+            position: relative;
+        }
+
+        .separator::before,
+        .separator::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            width: 40%;
+            height: 1px;
+            background: #ddd;
+        }
+
+        .separator::before { left: 0; }
+        .separator::after { right: 0; }
+
+        .note {
+            font-size: 13px;
+            color: #888;
+            margin-top: 15px;
+        }
+
+        /* Onboarding Screens */
+        .onboarding {
+            display: none;
+            background: white;
+            border-radius: 20px;
+            padding: 40px 30px;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .onboarding.active {
+            display: block;
+        }
+
+        .onboarding-icon {
+            width: 100px;
+            height: 100px;
+            background: #FFF4E6;
+            border-radius: 50%;
+            margin: 0 auto 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 50px;
+        }
+
+        .onboarding h2 {
+            font-size: 28px;
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .onboarding p {
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 30px;
+        }
+
+        .progress-dots {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 30px;
+        }
+
+        .dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #ddd;
+            transition: all 0.3s;
+        }
+
+        .dot.active {
+            background: #f7931e;
+            width: 30px;
+            border-radius: 5px;
+        }
+
+        .onboarding-buttons {
+            display: flex;
+            gap: 15px;
+        }
+
+        .btn-secondary {
+            background: white;
+            color: #666;
+            border: 2px solid #ddd;
+        }
+
+        .btn-secondary:hover {
+            background: #f5f5f5;
+        }
+
+        .btn-primary {
+            background: #f7931e;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #d47a0a;
+        }
+
+        @media (max-width: 768px) {
+            h1 { font-size: 36px; }
+            .login-box { padding: 20px; }
+            .onboarding { padding: 30px 20px; }
+        }
+    </style>
 </head>
 <body>
-    <div class="background-map"></div>
-    <div class="login-container">
-        <div class="logo-box">
-            <div class="logo-icon">🧭</div>
+    <div class="container">
+        <!-- Login Screen -->
+        <div class="login-screen" id="loginScreen">
+            <div class="logo">🧭</div>
+            <h1>BOJOVKA</h1>
+            <p class="subtitle">Location-Based Adventure Game</p>
+
+            <div class="login-box">
+                <h2>Vítejte!</h2>
+                <p>Přihlaste se a začněte své dobrodružství</p>
+
+                <a href="login.php" class="btn google-btn">
+                    <i class="fab fa-google"></i>
+                    Přihlásit se přes Google
+                </a>
+
+                <div class="separator">NEBO</div>
+
+                <button class="btn anonymous-btn" onclick="startOnboarding()">
+                    <i class="fas fa-user-secret"></i>
+                    Anonymní přihlášení
+                </button>
+
+                <p class="note">
+                    Anonymní přihlášení vám přidělí náhodné zvířecí jméno
+                </p>
+            </div>
         </div>
-        
-        <h1 class="app-title">BOJOVKA</h1>
-        <p class="subtitle">Location-Based Adventure Game</p>
 
-        <div class="login-box">
-            <h2>Vítejte!</h2>
-            <p>Přihlaste se a začněte své dobrodružství</p>
+        <!-- Onboarding Step 1 -->
+        <div class="onboarding" id="onboarding1">
+            <div class="onboarding-icon">🧭</div>
+            <h2>Vítejte v BOJOVKA</h2>
+            <p>Objevujte svět kolem vás pomocí location-based dobrodružství. Vytvářejte vlastní questy nebo hrajte hry vytvořené ostatními.</p>
             
-            <a href="http://localhost/bojovka/login.php" class="btn google-btn">
-                <i class="fab fa-google"></i> Přihlásit se přes Google
-            </a>
+            <div class="progress-dots">
+                <div class="dot active"></div>
+                <div class="dot"></div>
+                <div class="dot"></div>
+                <div class="dot"></div>
+            </div>
 
-            <div class="separator">NEBO</div>
-            <a href="anonymous_login.php" class="btn anonymous-btn">
-                <i class="fas fa-user-secret"></i> Anonymní přihlášení
-            </a>
+            <div class="onboarding-buttons">
+                <button class="btn btn-secondary" onclick="skipOnboarding()">Přeskočit</button>
+                <button class="btn btn-primary" onclick="nextOnboarding(2)">Další</button>
+            </div>
+        </div>
 
-            <p class="note">
-                Anonymní přihlášení vám přidělí náhodné zvířecí jméno
-            </p>
+        <!-- Onboarding Step 2 -->
+        <div class="onboarding" id="onboarding2">
+            <div class="onboarding-icon">🗺️</div>
+            <h2>Procházejte Hry</h2>
+            <p>Najděte zajímavé dobrodružství ve vašem okolí. Filtrujte podle obtížnosti, vzdálenosti nebo hodnocení. Každá hra obsahuje waypoints s úkoly.</p>
+            
+            <div class="progress-dots">
+                <div class="dot"></div>
+                <div class="dot active"></div>
+                <div class="dot"></div>
+                <div class="dot"></div>
+            </div>
 
-            <p class="terms">
-                Přihlášením souhlasíte s našimi <a href="#">podmínkami používání</a>
-            </p>
+            <div class="onboarding-buttons">
+                <button class="btn btn-secondary" onclick="nextOnboarding(1)">Zpět</button>
+                <button class="btn btn-primary" onclick="nextOnboarding(3)">Další</button>
+            </div>
+        </div>
+
+        <!-- Onboarding Step 3 -->
+        <div class="onboarding" id="onboarding3">
+            <div class="onboarding-icon">➕</div>
+            <h2>Vytvářejte Vlastní Hry</h2>
+            <p>Používejte mapy.cz k plánování tras. Přidávejte waypoints a questy - fotografie, otázky, výzvy nebo poklady. Sdílejte své hry s přáteli.</p>
+            
+            <div class="progress-dots">
+                <div class="dot"></div>
+                <div class="dot"></div>
+                <div class="dot active"></div>
+                <div class="dot"></div>
+            </div>
+
+            <div class="onboarding-buttons">
+                <button class="btn btn-secondary" onclick="nextOnboarding(2)">Zpět</button>
+                <button class="btn btn-primary" onclick="nextOnboarding(4)">Další</button>
+            </div>
+        </div>
+
+        <!-- Onboarding Step 4 -->
+        <div class="onboarding" id="onboarding4">
+            <div class="onboarding-icon">🏆</div>
+            <h2>Sbírejte Body</h2>
+            <p>Plněním questů získáváte body. Sledujte svůj pokrok, soutěžte s přáteli a objevujte nová místa. Každý quest má své body podle obtížnosti.</p>
+            
+            <div class="progress-dots">
+                <div class="dot"></div>
+                <div class="dot"></div>
+                <div class="dot"></div>
+                <div class="dot active"></div>
+            </div>
+
+            <div class="onboarding-buttons">
+                <button class="btn btn-secondary" onclick="nextOnboarding(3)">Zpět</button>
+                <button class="btn btn-primary" onclick="finishOnboarding()">Začít</button>
+            </div>
         </div>
     </div>
+
+    <script>
+        function startOnboarding() {
+            document.getElementById('loginScreen').style.display = 'none';
+            document.getElementById('onboarding1').classList.add('active');
+        }
+
+        function nextOnboarding(step) {
+            // Hide all onboarding screens
+            document.querySelectorAll('.onboarding').forEach(el => {
+                el.classList.remove('active');
+            });
+            
+            // Show the requested step
+            document.getElementById('onboarding' + step).classList.add('active');
+        }
+
+        function skipOnboarding() {
+            window.location.href = 'anonymous_login.php';
+        }
+
+        function finishOnboarding() {
+            window.location.href = 'anonymous_login.php';
+        }
+    </script>
 </body>
 </html>
