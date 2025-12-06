@@ -53,7 +53,7 @@ $adventures = [
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BOJOVKA - Dashboard</title>
-    <link rel="stylesheet" href="dashboard.css">
+    <link rel="stylesheet" href="style_dashboard.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
@@ -162,6 +162,48 @@ $adventures = [
             </div>
         </div>
     </main>
+
+    <!-- Join by Code Modal -->
+    <div class="modal" id="joinModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Join Adventure</h3>
+                <button class="btn-close" onclick="closeJoinModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="join-tabs">
+                    <button class="join-tab active" onclick="switchJoinTab('code')">
+                        <i class="fas fa-keyboard"></i>
+                        Enter Code
+                    </button>
+                    <button class="join-tab" onclick="switchJoinTab('qr')">
+                        <i class="fas fa-qrcode"></i>
+                        Scan QR Code
+                    </button>
+                </div>
+
+                <!-- Code Input -->
+                <div class="join-content active" id="codeContent">
+                    <p class="join-description">Enter the 6-digit game code</p>
+                    <input type="text" class="code-input" id="gameCode" placeholder="000000" maxlength="6" pattern="[0-9]*">
+                    <button class="btn-join" onclick="joinByCode()">
+                        Join Adventure
+                    </button>
+                </div>
+
+                <!-- QR Scanner -->
+                <div class="join-content" id="qrContent">
+                    <div class="qr-placeholder">
+                        <i class="fas fa-camera"></i>
+                        <p>QR Code Scanner</p>
+                        <small>Point your camera at the QR code</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <script src="dashboard.js"></script>
 </body>
