@@ -53,7 +53,7 @@ $adventures = [
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BOJOVKA - Dashboard</title>
-    <link rel="stylesheet" href="dashboard.css">
+    <link rel="stylesheet" href="style_dashboard.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
@@ -99,14 +99,28 @@ $adventures = [
     <!-- Main Content -->
     <main class="main-content">
         <div class="content-wrapper">
-            <!-- Page Title -->
+            <!-- Page Header -->
             <div class="page-header">
-                <h2>Discover Adventures</h2>
-                <p class="subtitle">Choose a quest created by the community</p>
+                <div class="header-left">
+                    <h2>Discover Adventures</h2>
+                    <p class="subtitle">Choose a quest created by the community</p>
+                </div>
+                <button class="btn-join-code" onclick="openJoinModal()">
+                    <i class="fas fa-qrcode"></i>
+                    <span>Join by Code</span>
+                </button>
+            </div>
+
+            <!-- Search Bar -->
+            <div class="search-container">
+                <div class="search-bar">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="searchInput" placeholder="Search by game name or author..." onkeyup="searchAdventures()">
+                </div>
             </div>
 
             <!-- Adventures Grid -->
-            <div class="adventures-grid">
+            <div class="adventures-grid" id="adventuresGrid">
                 <?php foreach ($adventures as $adventure): ?>
                 <article class="adventure-card">
                     <div class="card-header">
