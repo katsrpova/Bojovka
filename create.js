@@ -1,206 +1,147 @@
-// ==================== CREATE PAGE FUNCTIONALITY ====================
-
-let waypoints = [];
-let addMode = false;
-let map = null; // API MAPY.CZ - instance mapy
-
-// ==================== MAP INITIALIZATION ====================
-// API MAPY.CZ - zde se inicializuje mapa
-function initMap() {
-    // TODO: Inicializovat Mapy.cz
-    console.log('Map initialization - waiting for Mapy.cz API');
-    
-    // Příklad, jak by to mohlo vypadat:
-    /*
-    Loader.async = true;
-    Loader.load(null, null, () => {
-        const center = SMap.Coords.fromWGS84(14.4378, 50.0755); // Praha
-        map = new SMap(document.getElementById('map'), center, 13);
-        map.addDefaultLayer(SMap.DEF_BASE).enable();
-        map.addDefaultControls();
-        
-        // Click event pro přidávání waypointů
-        map.getSignals().addListener(this, 'map-click', handleMapClick);
+// Difficulty selection handling
+document.querySelectorAll('.difficulty-option').forEach(option => {
+    option.addEventListener('click', function() {
+        // Odstraň selected třídu ze všech opcí
+        document.querySelectorAll('.difficulty-option').forEach(opt => {
+            opt.classList.remove('selected');
+        });
+        // Přidej selected třídu na kliknutou opci
+        this.classList.add('selected');
+        // Zaškrtni příslušné radio tlačítko
+        this.querySelector('input[type="radio"]').checked = true;
     });
-    */
-}
+});
 
-// ==================== WAYPOINT MANAGEMENT ====================
-
-function toggleAddMode() {
-    addMode = !addMode;
-    const btn = document.querySelector('.tool-btn');
-    if (addMode) {
-        btn.classList.add('active');
-    } else {
-        btn.classList.remove('active');
+// Přednastav vybranou obtížnost při načtení stránky
+document.addEventListener('DOMContentLoaded', function() {
+    const selectedRadio = document.querySelector('input[name="difficulty"]:checked');
+    if (selectedRadio) {
+        selectedRadio.closest('.difficulty-option').classList.add('selected');
     }
-}
+});
 
-function handleMapClick(e) {
-    // API MAPY.CZ - zpracování kliknutí na mapu
-    if (!addMode) return;
+// Form validation a submit handling
+document.getElementById('createGameForm').addEventListener('submit', function(e) {
+    e.preventDefault();
     
-    // TODO: Získat souřadnice z události
-    // const coords = e.data.coords;
+    // Získej hodnoty z formuláře
+    const gameName = document.querySelector('input[name="game_name"]').value.trim();
+    const gameDesc = document.querySelector('textarea[name="game_description"]').value.trim();
+    const startLocation = document.querySelector('input[name="start_location"]').value.trim();
+    const difficulty = document.querySelector('input[name="difficulty"]:checked');
     
-    addWaypoint({
-        lat: 50.0755, // Placeholder
-        lng: 14.4378, // Placeholder
-        name: `Waypoint ${waypoints.length + 1}`
-    });
-}
-
-function addWaypoint(data) {
-    const waypoint = {
-        id: Date.now(),
-        ...data,
-        description: '',
-        type: 'checkpoint'
-    };
-    
-    waypoints.push(waypoint);
-    updateWaypointsList();
-    updateMapMarkers();
-    updateStats();
-}
-
-function removeWaypoint(id) {
-    waypoints = waypoints.filter(w => w.id !== id);
-    updateWaypointsList();
-    updateMapMarkers();
-    updateStats();
-}
-
-function updateWaypointsList() {
-    const list = document.getElementById('waypointsList');
-    const count = document.getElementById('waypointCount');
-    
-    count.textContent = waypoints.length;
-    
-    if (waypoints.length === 0) {
-        list.innerHTML = '<p class="empty-message">Click on map to add waypoints</p>';
-        return;
-    }
-    
-    list.innerHTML = waypoints.map((wp, index) => `
-        <div class="waypoint-item">
-            <div class="waypoint-header">
-                <span class="waypoint-number">${index + 1}</span>
-                <input type="text" value="${wp.name}" class="waypoint-name" 
-                       onchange="updateWaypointName(${wp.id}, this.value)">
-                <button class="btn-remove" onclick="removeWaypoint(${wp.id})">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-        </div>
-    `).join('');
-}
-
-function updateWaypointName(id, name) {
-    const waypoint = waypoints.find(w => w.id === id);
-    if (waypoint) {
-        waypoint.name = name;
-    }
-}
-
-// ==================== MAP FUNCTIONS ====================
-
-function centerMap() {
-    // API MAPY.CZ - vycentrovat mapu
-    if (map && waypoints.length > 0) {
-        // TODO: Vycentrovat na waypoints
-        console.log('Centering map');
-    }
-}
-
-function zoomIn() {
-    // API MAPY.CZ - přiblížit
-    if (map) {
-        console.log('Zoom in');
-        // map.setZoom(map.getZoom() + 1);
-    }
-}
-
-function zoomOut() {
-    // API MAPY.CZ - oddálit
-    if (map) {
-        console.log('Zoom out');
-        // map.setZoom(map.getZoom() - 1);
-    }
-}
-
-function updateMapMarkers() {
-    // API MAPY.CZ - aktualizovat značky na mapě
-    if (!map) return;
-    
-    // TODO: Vymazat staré značky
-    // TODO: Přidat nové značky z waypoints pole
-    console.log('Updating markers:', waypoints);
-}
-
-// ==================== STATS ====================
-
-function updateStats() {
-    // Vypočítat celkovou vzdálenost
-    let totalDistance = 0;
-    
-    for (let i = 0; i < waypoints.length - 1; i++) {
-        // TODO: Vypočítat vzdálenost mezi waypoints[i] a waypoints[i+1]
-        totalDistance += 0.5; // Placeholder
-    }
-    
-    const totalTime = Math.round(totalDistance * 12); // Odhad: 12 min/km
-    
-    document.getElementById('totalDistance').textContent = `${totalDistance.toFixed(1)} km`;
-    document.getElementById('totalTime').textContent = `${totalTime} min`;
-}
-
-// ==================== SAVE & CANCEL ====================
-
-function saveAdventure() {
-    const gameName = document.getElementById('gameName').value;
-    const gameDescription = document.getElementById('gameDescription').value;
-    const gameDifficulty = document.getElementById('gameDifficulty').value;
-    
+    // Validace povinných polí
     if (!gameName) {
-        alert('Please enter a game name');
+        alert('Prosím zadejte název hry');
+        document.querySelector('input[name="game_name"]').focus();
         return;
     }
     
-    if (waypoints.length < 2) {
-        alert('Please add at least 2 waypoints');
+    if (!gameDesc) {
+        alert('Prosím zadejte popis hry');
+        document.querySelector('textarea[name="game_description"]').focus();
         return;
     }
     
-    const adventure = {
-        name: gameName,
-        description: gameDescription,
-        difficulty: gameDifficulty,
-        waypoints: waypoints
-    };
+    if (!startLocation) {
+        alert('Prosím zadejte startovní lokaci');
+        document.querySelector('input[name="start_location"]').focus();
+        return;
+    }
     
-    console.log('Saving adventure:', adventure);
+    if (!difficulty) {
+        alert('Prosím vyberte obtížnost');
+        return;
+    }
     
-    // TODO: Odeslat na server
-    // fetch('save_adventure.php', { ... })
+    // Kontrola délky názvu
+    if (gameName.length < 3) {
+        alert('Název hry musí mít alespoň 3 znaky');
+        document.querySelector('input[name="game_name"]').focus();
+        return;
+    }
     
-    alert('Adventure saved! (Demo mode)');
-    window.location.href = 'dashboard.php';
-}
+    // Kontrola délky popisu
+    if (gameDesc.length < 20) {
+        alert('Popis hry musí mít alespoň 20 znaků');
+        document.querySelector('textarea[name="game_description"]').focus();
+        return;
+    }
+    
+    // Pokud vše prošlo validací, simuluj úspěch (později odkomentuj this.submit())
+    console.log('Form data:', {
+        gameName,
+        gameDesc,
+        startLocation,
+        difficulty: difficulty.value,
+        estimatedTime: document.querySelector('select[name="estimated_time"]').value,
+        checkpointCount: document.querySelector('input[name="checkpoint_count"]').value
+    });
+    
+    alert('Hra byla úspěšně vytvořena! (Demo režim)\n\nPro plnou funkčnost vytvořte soubor create_game_handler.php');
+    
+    // Pro produkční použití odkomentujte:
+    // this.submit();
+});
 
-function cancelCreate() {
-    if (waypoints.length > 0) {
-        if (!confirm('Are you sure? All changes will be lost.')) {
-            return;
+// Optional: Živá validace při psaní
+document.querySelector('input[name="game_name"]').addEventListener('input', function() {
+    const length = this.value.trim().length;
+    const helper = this.parentElement.querySelector('.form-helper');
+    
+    if (!helper) {
+        const newHelper = document.createElement('div');
+        newHelper.className = 'form-helper';
+        this.parentElement.appendChild(newHelper);
+    }
+    
+    if (length > 0 && length < 3) {
+        this.style.borderColor = '#dc3545';
+    } else if (length >= 3) {
+        this.style.borderColor = '#28a745';
+    } else {
+        this.style.borderColor = '#e0e0e0';
+    }
+});
+
+document.querySelector('textarea[name="game_description"]').addEventListener('input', function() {
+    const length = this.value.trim().length;
+    const helper = this.parentElement.querySelector('.form-helper');
+    
+    if (helper) {
+        if (length > 0 && length < 20) {
+            helper.textContent = `Ještě ${20 - length} znaků do minima`;
+            helper.style.color = '#dc3545';
+            this.style.borderColor = '#dc3545';
+        } else if (length >= 20) {
+            helper.textContent = 'Napište zajímavý popis, který přiláká další hráče';
+            helper.style.color = '#666';
+            this.style.borderColor = '#28a745';
+        } else {
+            helper.textContent = 'Napište zajímavý popis, který přiláká další hráče';
+            helper.style.color = '#666';
+            this.style.borderColor = '#e0e0e0';
         }
     }
-    window.location.href = 'dashboard.php';
-}
+});
 
-// ==================== INITIALIZATION ====================
-
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('Create page loaded');
-    initMap();
+// Optional: Simulace mapy při zadání lokace
+document.querySelector('input[name="start_location"]').addEventListener('blur', function() {
+    const location = this.value.trim();
+    const mapPreview = document.querySelector('.map-preview');
+    
+    if (location) {
+        mapPreview.innerHTML = `
+            <i class="fas fa-map-marked-alt"></i>
+            <p><strong>${location}</strong></p>
+            <p style="font-size: 12px; margin-top: 5px;">Lokace zadána (integrace s mapou bude přidána)</p>
+        `;
+        mapPreview.style.borderColor = '#28a745';
+    } else {
+        mapPreview.innerHTML = `
+            <i class="fas fa-map"></i>
+            <p>Náhled mapy se zobrazí po zadání lokace</p>
+        `;
+        mapPreview.style.borderColor = '#ddd';
+    }
 });
