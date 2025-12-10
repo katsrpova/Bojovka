@@ -155,7 +155,7 @@ $isAnonymous = isset($_SESSION['is_anonymous']) && $_SESSION['is_anonymous'];
 
                     <div class="map-preview">
                         <i class="fas fa-map"></i>
-                        <p>Náhled mapy se zobrazí po zadání lokace</p>
+                        <p>Náhled mapy</p>
                     </div>
                 </div>
 
