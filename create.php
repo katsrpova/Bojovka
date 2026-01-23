@@ -1,3 +1,4 @@
+
 <?php
 session_start();
 
@@ -15,9 +16,12 @@ $isAnonymous = isset($_SESSION['is_anonymous']) && $_SESSION['is_anonymous'];
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline' https://api.mapy.cz;">
     <title>BOJOVKA - Vytvořit hru</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="create.css">
+    <script src="https://api.mapy.cz/loader.js"></script>
+    <script>Loader.async = true;</script>
 </head>
 <body>
     <!-- Header -->

@@ -15,114 +15,12 @@ $isAnonymous = isset($_SESSION['is_anonymous']) && $_SESSION['is_anonymous'];
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline' https://api.mapy.cz;">
     <title>BOJOVKA - Hra</title>
     <link rel="stylesheet" href="style.css">
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-        }
-        
-        .game-container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        
-        .header {
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            margin-bottom: 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .user-info {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-        
-        .user-avatar {
-            width: 50px;
-            height: 50px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-        }
-        
-        .user-name {
-            font-size: 20px;
-            font-weight: bold;
-            color: #333;
-        }
-        
-        .user-badge {
-            background: #f7931e;
-            color: white;
-            padding: 4px 12px;
-            border-radius: 12px;
-            font-size: 12px;
-            font-weight: bold;
-        }
-        
-        .logout-btn {
-            background: #dc3545;
-            color: white;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            text-decoration: none;
-            font-size: 14px;
-        }
-        
-        .logout-btn:hover {
-            background: #c82333;
-        }
-        
-        .game-content {
-            background: white;
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            text-align: center;
-        }
-        
-        .welcome-message {
-            font-size: 24px;
-            color: #333;
-            margin-bottom: 20px;
-        }
-        
-        .game-info {
-            color: #666;
-            font-size: 16px;
-            line-height: 1.6;
-        }
-        
-        .map-placeholder {
-            width: 100%;
-            height: 400px;
-            background: #f0f0f0;
-            border-radius: 8px;
-            margin: 20px 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 18px;
-            color: #999;
-        }
-    </style>
+     <!-- MAPY.CZ API -->
+    <script src="https://api.mapy.cz/loader.js"></script>
+    <script>Loader.async = true;</script>
 </head>
 <body>
     <div class="game-container">
@@ -143,20 +41,52 @@ $isAnonymous = isset($_SESSION['is_anonymous']) && $_SESSION['is_anonymous'];
         
         <div class="game-content">
             <h1 class="welcome-message">🎮 Vítej v BOJOVCE, <?php echo htmlspecialchars($userName); ?>!</h1>
-            
             <div class="game-info">
                 <p>Tvé dobrodružství začíná zde!</p>
-                <p>Brzy zde bude mapa, úkoly a další herní prvky.</p>
+                <p>Pohybuj se po mapě a hledej úkoly ve svém okolí.</p>
             </div>
-            
-            <div class="map-placeholder">
-                📍 Zde bude mapa s tvou aktuální pozicí
-            </div>
-            
-            <p class="game-info">
-                <strong>Status:</strong> Připraven k akci! 🚀
-            </p>
+            <div id="map"></div>
         </div>
     </div>
+
+    <script>
+        Loader.load(null, {suggest: true}, function() {
+            // Vytvoř mapu se středem na Praze
+            var center = SMap.Coords.fromWGS84(14.4378, 50.0755);
+            var m = new SMap(JAK.gel("map"), center, 13);
+            
+            // Přidej ovládací prvky
+            m.addDefaultLayer(SMap.DEF_BASE).enable();
+            m.addDefaultControls();
+            
+            // Pokus o získání aktuální polohy uživatele
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(function(position) {
+                    var userCoords = SMap.Coords.fromWGS84(
+                        position.coords.longitude, 
+                        position.coords.latitude
+                    );
+                    
+                    // Vycentruj mapu na uživatele
+                    m.setCenterZoom(userCoords, 15);
+                    
+                    // Přidej značku s polohou uživatele
+                    var layer = new SMap.Layer.Marker();
+                    m.addLayer(layer);
+                    layer.enable();
+                    
+                    var marker = new SMap.Marker(userCoords, "you", {
+                        title: "Vaše poloha"
+                    });
+                    layer.addMarker(marker);
+                }, function(error) {
+                    console.log("Chyba geolokace:", error);
+                     alert("Nepodařilo se získat vaši polohu. Ujistěte se, že máte povolenou geolokaci v prohlížeči.");
+                });
+            } else {
+                alert("Váš prohlížeč nepodporuje geolokaci.");
+            }
+        });
+    </script>
 </body>
 </html>
