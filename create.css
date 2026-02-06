@@ -242,26 +242,6 @@ body {
     margin-top: 5px;
 }
 
-/* Map Preview */
-.map-preview {
-    width: 100%;
-    height: 300px;
-    background: #f5f5f5;
-    border: 2px dashed #ddd;
-    border-radius: 8px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    color: #999;
-    margin-top: 10px;
-}
-
-.map-preview i {
-    font-size: 48px;
-    margin-bottom: 15px;
-}
-
 /* Difficulty Selection */
 .difficulty-options {
     display: grid;
@@ -307,6 +287,211 @@ body {
 .difficulty-desc {
     font-size: 12px;
     color: #666;
+}
+
+/* Info Box */
+.info-box {
+    background: #FFF4E6;
+    border: 1px solid #F7931E;
+    border-radius: 8px;
+    padding: 12px;
+    font-size: 13px;
+    color: #D47A0A;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.info-box i {
+    font-size: 16px;
+}
+
+/* Map Container */
+.map-container {
+    background: white;
+    border-radius: 12px;
+    border: 2px solid #e0e0e0;
+    overflow: hidden;
+    margin-bottom: 15px;
+}
+
+.map-header {
+    padding: 15px 20px;
+    background: #f9f9f9;
+    border-bottom: 2px solid #e0e0e0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.map-header h3 {
+    font-size: 16px;
+    color: #333;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.map-controls {
+    display: flex;
+    gap: 8px;
+}
+
+.btn-icon {
+    width: 35px;
+    height: 35px;
+    background: white;
+    border: 2px solid #e0e0e0;
+    border-radius: 5px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s;
+    color: #666;
+}
+
+.btn-icon:hover {
+    background: #f7931e;
+    border-color: #f7931e;
+    color: white;
+}
+
+#map {
+    width: 100%;
+    height: 500px;
+    background: #f5f5f5;
+}
+
+.map-legend {
+    padding: 12px 20px;
+    background: #f9f9f9;
+    border-top: 2px solid #e0e0e0;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    color: #666;
+}
+
+.legend-marker {
+    width: 25px;
+    height: 25px;
+    background: #f7931e;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: bold;
+    font-size: 12px;
+}
+
+/* Tasks List */
+.tasks-list {
+    margin-top: 15px;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.no-tasks {
+    text-align: center;
+    color: #999;
+    padding: 30px;
+    font-size: 14px;
+    background: #f9f9f9;
+    border-radius: 8px;
+}
+
+.task-item {
+    background: #f9f9f9;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 10px;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    transition: all 0.3s;
+}
+
+.task-item:hover {
+    border-color: #8B4513;
+    box-shadow: 0 2px 8px rgba(139, 69, 19, 0.1);
+}
+
+.task-number {
+    width: 35px;
+    height: 35px;
+    background: #f7931e;
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 14px;
+    flex-shrink: 0;
+}
+
+.task-content {
+    flex: 1;
+}
+
+.task-input {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    transition: all 0.3s;
+}
+
+.task-input:focus {
+    outline: none;
+    border-color: #8B4513;
+}
+
+.task-textarea {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 13px;
+    min-height: 60px;
+    resize: vertical;
+    transition: all 0.3s;
+}
+
+.task-textarea:focus {
+    outline: none;
+    border-color: #8B4513;
+}
+
+.btn-delete {
+    width: 35px;
+    height: 35px;
+    background: #dc3545;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s;
+    flex-shrink: 0;
+}
+
+.btn-delete:hover {
+    background: #c82333;
+    transform: scale(1.1);
 }
 
 /* Buttons */
@@ -386,4 +571,31 @@ body {
         gap: 4px;
         font-size: 12px;
     }
+
+    #map {
+        height: 400px;
+    }
+
+    .tasks-list {
+        max-height: 300px;
+    }
+}
+
+/* Custom scrollbar pro tasks list */
+.tasks-list::-webkit-scrollbar {
+    width: 8px;
+}
+
+.tasks-list::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+.tasks-list::-webkit-scrollbar-thumb {
+    background: #8B4513;
+    border-radius: 4px;
+}
+
+.tasks-list::-webkit-scrollbar-thumb:hover {
+    background: #6B3410;
 }
