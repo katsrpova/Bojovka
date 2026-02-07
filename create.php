@@ -179,6 +179,9 @@ $apiKey = MAPY_CZ_API_KEY;
                         </div>
                     </div>
 
+                    <!-- Route Statistics -->
+                    <div id="routeStats"></div>
+
                     <!-- Seznam úkolů -->
                     <div id="tasksList" class="tasks-list">
                         <p class="no-tasks">Zatím nejsou přidány žádné úkoly</p>

@@ -3,6 +3,10 @@ let map;
 let markers = [];
 let waypoints = [];
 let waypointCounter = 0;
+let userLocationMarker = null;
+let userLocationCircle = null;
+let routeLine = null;
+let apiKey = null;
 
 // ==================== INICIALIZACE ====================
 document.addEventListener('DOMContentLoaded', function() {
@@ -19,7 +23,7 @@ function initMap() {
         map = L.map('map').setView([50.0755, 14.4378], 13);
 
         // Získej API klíč z HTML data atributu
-        const apiKey = document.getElementById('map').dataset.apikey;
+        apiKey = document.getElementById('map').dataset.apikey;
 
         // Přidej Mapy.cz tile layer pomocí REST API
         L.tileLayer('https://api.mapy.cz/v1/maptiles/basic/256/{z}/{x}/{y}?apikey=' + apiKey, {
@@ -71,14 +75,50 @@ function initMap() {
 
 function getUserLocation() {
     if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(function(position) {
+        // Sleduj polohu průběžně
+        navigator.geolocation.watchPosition(function(position) {
             const lat = position.coords.latitude;
             const lon = position.coords.longitude;
+            const accuracy = position.coords.accuracy;
             
-            map.setView([lat, lon], 15);
-            console.log('✓ User location:', lat, lon);
+            // Při prvním získání pozice vycentruj mapu
+            if (!userLocationMarker) {
+                map.setView([lat, lon], 15);
+                console.log('✓ User location:', lat, lon);
+            }
+            
+            // Aktualizuj nebo vytvoř marker pro polohu uživatele
+            if (userLocationMarker) {
+                userLocationMarker.setLatLng([lat, lon]);
+                userLocationCircle.setLatLng([lat, lon]);
+                userLocationCircle.setRadius(accuracy);
+            } else {
+                // Vytvoř modrý marker pro aktuální polohu
+                const userIcon = L.divIcon({
+                    className: 'user-location-marker',
+                    html: '<div class="user-location-dot"></div>',
+                    iconSize: [20, 20],
+                    iconAnchor: [10, 10]
+                });
+                
+                userLocationMarker = L.marker([lat, lon], { icon: userIcon }).addTo(map);
+                userLocationMarker.bindPopup('<strong>Vaše poloha</strong>');
+                
+                // Kruh znázorňující přesnost
+                userLocationCircle = L.circle([lat, lon], {
+                    radius: accuracy,
+                    color: '#4285F4',
+                    fillColor: '#4285F4',
+                    fillOpacity: 0.1,
+                    weight: 1
+                }).addTo(map);
+            }
         }, function(error) {
             console.log('Geolocation error:', error.message);
+        }, {
+            enableHighAccuracy: true,
+            timeout: 5000,
+            maximumAge: 0
         });
     }
 }
@@ -154,6 +194,13 @@ function updateTasksList() {
     
     if (waypoints.length === 0) {
         tasksList.innerHTML = '<p class="no-tasks">Zatím nejsou přidány žádné úkoly</p>';
+        // Smaž trasu z mapy
+        if (routeLine) {
+            map.removeLayer(routeLine);
+            routeLine = null;
+        }
+        // Skryj statistiky trasy
+        document.getElementById('routeStats').style.display = 'none';
         return;
     }
     
@@ -179,11 +226,116 @@ function updateTasksList() {
             </button>
         </div>
     `).join('');
+    
+    // Pokud je více než 1 waypoint, naplánuj trasu
+    if (waypoints.length >= 2) {
+        planRoute();
+    }
 }
 
 function updateWaypointsData() {
     document.getElementById('waypointsData').value = JSON.stringify(waypoints);
     console.log('Waypoints updated:', waypoints.length);
+}
+
+// ==================== PLÁNOVÁNÍ TRASY ====================
+async function planRoute() {
+    if (waypoints.length < 2) {
+        return;
+    }
+    
+    try {
+        // Připrav body pro API
+        const start = `${waypoints[0].lng},${waypoints[0].lat}`;
+        const end = `${waypoints[waypoints.length - 1].lng},${waypoints[waypoints.length - 1].lat}`;
+        
+        // Průjezdní body (pokud jsou)
+        let waypointsParam = '';
+        if (waypoints.length > 2) {
+            const middlePoints = waypoints.slice(1, -1)
+                .map(wp => `${wp.lng},${wp.lat}`)
+                .join(';');
+            waypointsParam = `&waypoints=${encodeURIComponent(middlePoints)}`;
+        }
+        
+        // API endpoint pro plánování trasy (pěšky)
+        const url = `https://api.mapy.cz/v1/routing/route?` +
+            `apikey=${apiKey}` +
+            `&start=${start}` +
+            `&end=${end}` +
+            `${waypointsParam}` +
+            `&routeType=foot_fast` +
+            `&format=geojson`;
+        
+        console.log('Planning route...');
+        const response = await fetch(url);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        // Zobraz trasu na mapě
+        displayRoute(data);
+        
+        // Zobraz statistiky
+        displayRouteStats(data);
+        
+    } catch (error) {
+        console.error('Error planning route:', error);
+    }
+}
+
+function displayRoute(routeData) {
+    // Odstraň starou trasu
+    if (routeLine) {
+        map.removeLayer(routeLine);
+    }
+    
+    // Vytvoř novou trasu z GeoJSON
+    routeLine = L.geoJSON(routeData.geometry, {
+        style: {
+            color: '#4285F4',
+            weight: 4,
+            opacity: 0.7
+        }
+    }).addTo(map);
+    
+    // Přizpůsob zoom aby byla vidět celá trasa
+    const bounds = routeLine.getBounds();
+    map.fitBounds(bounds, { padding: [50, 50] });
+    
+    console.log('✓ Route displayed');
+}
+
+function displayRouteStats(routeData) {
+    const length = routeData.length; // v metrech
+    const duration = routeData.duration; // v sekundách
+    
+    // Převod na čitelný formát
+    const lengthKm = (length / 1000).toFixed(2);
+    const durationMin = Math.round(duration / 60);
+    
+    // Zobraz statistiky
+    const statsDiv = document.getElementById('routeStats');
+    statsDiv.innerHTML = `
+        <div class="route-stat">
+            <i class="fas fa-route"></i>
+            <span>Délka trasy: <strong>${lengthKm} km</strong></span>
+        </div>
+        <div class="route-stat">
+            <i class="fas fa-clock"></i>
+            <span>Odhadovaný čas: <strong>${durationMin} min</strong> (pěšky)</span>
+        </div>
+        <div class="route-stat">
+            <i class="fas fa-map-marker-alt"></i>
+            <span>Počet waypointů: <strong>${waypoints.length}</strong></span>
+        </div>
+    `;
+    statsDiv.style.display = 'flex';
+    
+    console.log(`✓ Route stats: ${lengthKm} km, ${durationMin} min`);
 }
 
 // ==================== EVENT LISTENERS ====================
