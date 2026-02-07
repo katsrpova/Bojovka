@@ -599,3 +599,46 @@ body {
 .tasks-list::-webkit-scrollbar-thumb:hover {
     background: #6B3410;
 }
+
+/* Custom Leaflet Marker Styles */
+.custom-marker {
+    background: none;
+    border: none;
+}
+
+.marker-pin {
+    width: 30px;
+    height: 42px;
+    position: relative;
+    background: #f7931e;
+    border-radius: 50% 50% 50% 0;
+    transform: rotate(-45deg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.marker-pin::after {
+    content: '';
+    width: 20px;
+    height: 20px;
+    margin: 3px 0 0 3px;
+    background: white;
+    position: absolute;
+    border-radius: 50%;
+}
+
+.marker-pin span {
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    margin: 3px 0 0 3px;
+    font-size: 12px;
+    font-weight: bold;
+    color: #f7931e;
+    z-index: 10;
+    transform: rotate(45deg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
