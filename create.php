@@ -12,6 +12,7 @@ $isAnonymous = isset($_SESSION['is_anonymous']) && $_SESSION['is_anonymous'];
 
 // Načti API klíč z config
 require_once 'config.php';
+$apiKey = MAPY_CZ_API_KEY;
 ?>
 <!DOCTYPE html>
 <html lang="cs">
@@ -19,14 +20,15 @@ require_once 'config.php';
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BOJOVKA - Vytvořit hru</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link rel="stylesheet" href="create.css">
     
-    <!-- NOVÉ MAPY.CZ API V5 -->
-    <script type="module">
-        import * as mapycz from 'https://api.mapy.cz/v6/loader.js';
-        window.mapycz = mapycz;
-    </script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="create.css">
 </head>
 <body>
     <!-- Header -->
@@ -220,40 +222,64 @@ require_once 'config.php';
         </div>
     </div>
 
-    <script type="module">
-        // Import Mapy.cz API v6
-        const { MapView, Marker, Coords } = await window.mapycz;
-
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <script>
+        // API klíč z PHP
+        const API_KEY = '<?php echo $apiKey; ?>';
+        
         // Globální proměnné
         let map;
         let markers = [];
         let waypoints = [];
         let waypointCounter = 0;
 
-        // Inicializace mapy
-        async function initMap() {
-            try {
-                console.log('✓ Initializing map with API v6...');
-                
-                const mapElement = document.getElementById('map');
-                if (!mapElement) {
-                    console.error('Map element not found!');
-                    return;
-                }
+        // Inicializace mapy po načtení DOM
+        document.addEventListener('DOMContentLoaded', function() {
+            initMap();
+            initEventListeners();
+        });
 
+        function initMap() {
+            try {
+                console.log('✓ Initializing Leaflet map...');
+                
                 // Vytvoř mapu - Praha jako výchozí centrum
-                map = new MapView({
-                    element: mapElement,
-                    center: Coords.fromWGS84(14.4378, 50.0755),
-                    zoom: 13
+                map = L.map('map').setView([50.0755, 14.4378], 13);
+
+                // Přidej Mapy.cz tile layer pomocí REST API
+                L.tileLayer('https://api.mapy.cz/v1/maptiles/basic/256/{z}/{x}/{y}?apikey=' + API_KEY, {
+                    minZoom: 0,
+                    maxZoom: 19,
+                    attribution: '<a href="https://api.mapy.cz/copyright" target="_blank">&copy; Seznam.cz a.s. a další</a>',
+                }).addTo(map);
+
+                // Logo Mapy.cz (povinné pro použití API)
+                const LogoControl = L.Control.extend({
+                    options: {
+                        position: 'bottomleft',
+                    },
+
+                    onAdd: function (map) {
+                        const container = L.DomUtil.create('div');
+                        const link = L.DomUtil.create('a', '', container);
+
+                        link.setAttribute('href', 'http://mapy.cz/');
+                        link.setAttribute('target', '_blank');
+                        link.innerHTML = '<img src="https://api.mapy.cz/img/api/logo.svg" />';
+                        L.DomEvent.disableClickPropagation(link);
+
+                        return container;
+                    },
                 });
+                new LogoControl().addTo(map);
 
                 console.log('✓ Map created successfully');
 
-                // Přidej event listener pro kliknutí na mapu
-                map.addEventListener('map-click', (event) => {
-                    const coords = event.detail.coords;
-                    addWaypoint(coords);
+                // Event listener pro kliknutí na mapu
+                map.on('click', function(e) {
+                    addWaypoint(e.latlng);
                 });
 
                 console.log('✓ Map is ready! Click to add waypoints.');
@@ -273,26 +299,24 @@ require_once 'config.php';
         function getUserLocation() {
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(function(position) {
-                    const userCoords = Coords.fromWGS84(
-                        position.coords.longitude,
-                        position.coords.latitude
-                    );
-                    map.setCenter(userCoords);
-                    map.setZoom(15);
-                    console.log('✓ User location:', position.coords.latitude, position.coords.longitude);
+                    const lat = position.coords.latitude;
+                    const lon = position.coords.longitude;
+                    
+                    map.setView([lat, lon], 15);
+                    console.log('✓ User location:', lat, lon);
                 }, function(error) {
                     console.log('Geolocation error:', error.message);
                 });
             }
         }
 
-        function addWaypoint(coords) {
+        function addWaypoint(latlng) {
             waypointCounter++;
             
             const waypoint = {
                 id: waypointCounter,
-                lat: coords.lat,
-                lng: coords.lon,
+                lat: latlng.lat,
+                lng: latlng.lng,
                 name: `Úkol ${waypointCounter}`,
                 description: '',
                 type: 'checkpoint'
@@ -300,13 +324,16 @@ require_once 'config.php';
             
             waypoints.push(waypoint);
 
-            // Vytvoř marker
-            const marker = new Marker({
-                coords: coords,
-                title: waypoint.name
+            // Vytvoř custom marker s číslem
+            const icon = L.divIcon({
+                className: 'custom-marker',
+                html: '<div class="marker-pin"><span>' + waypointCounter + '</span></div>',
+                iconSize: [30, 42],
+                iconAnchor: [15, 42]
             });
-            
-            map.addMarker(marker);
+
+            const marker = L.marker(latlng, { icon: icon }).addTo(map);
+            marker.bindPopup(`<strong>${waypoint.name}</strong>`);
             markers.push(marker);
             
             console.log('✓ Waypoint added:', waypoint.name);
@@ -332,64 +359,60 @@ require_once 'config.php';
                             class="task-input" 
                             value="${wp.name}"
                             placeholder="Název úkolu"
-                            onchange="window.updateWaypointName(${wp.id}, this.value)"
+                            onchange="updateWaypointName(${wp.id}, this.value)"
                         >
                         <textarea 
                             class="task-textarea" 
                             placeholder="Popis úkolu nebo otázka..."
-                            onchange="window.updateWaypointDescription(${wp.id}, this.value)"
+                            onchange="updateWaypointDescription(${wp.id}, this.value)"
                         >${wp.description}</textarea>
                     </div>
-                    <button type="button" class="btn-delete" onclick="window.removeWaypoint(${wp.id})">
+                    <button type="button" class="btn-delete" onclick="removeWaypoint(${wp.id})">
                         <i class="fas fa-trash"></i>
                     </button>
                 </div>
             `).join('');
         }
 
-        window.updateWaypointName = function(id, name) {
+        function updateWaypointName(id, name) {
             const wp = waypoints.find(w => w.id === id);
             if (wp) {
                 wp.name = name;
                 updateWaypointsData();
             }
-        };
+        }
 
-        window.updateWaypointDescription = function(id, description) {
+        function updateWaypointDescription(id, description) {
             const wp = waypoints.find(w => w.id === id);
             if (wp) {
                 wp.description = description;
                 updateWaypointsData();
             }
-        };
+        }
 
-        window.removeWaypoint = function(id) {
+        function removeWaypoint(id) {
             const index = waypoints.findIndex(w => w.id === id);
             if (index === -1) return;
             
             // Odstraň waypoint
             waypoints.splice(index, 1);
             
-            // Odstraň marker
+            // Odstraň marker z mapy
             if (markers[index]) {
-                map.removeMarker(markers[index]);
+                map.removeLayer(markers[index]);
                 markers.splice(index, 1);
             }
             
             updateTasksList();
             updateWaypointsData();
-        };
+        }
 
         function updateWaypointsData() {
             document.getElementById('waypointsData').value = JSON.stringify(waypoints);
             console.log('Waypoints updated:', waypoints.length);
         }
 
-        // Event listeners po načtení DOM
-        document.addEventListener('DOMContentLoaded', function() {
-            // Inicializuj mapu
-            initMap();
-
+        function initEventListeners() {
             // Tlačítko Moje poloha
             document.getElementById('myLocationBtn').addEventListener('click', function() {
                 getUserLocation();
@@ -398,9 +421,9 @@ require_once 'config.php';
             // Tlačítko Smazat všechny značky
             document.getElementById('clearMarkersBtn').addEventListener('click', function() {
                 if (confirm('Opravdu chceš smazat všechny úkoly?')) {
-                    // Odstraň všechny markery
+                    // Odstraň všechny markery z mapy
                     markers.forEach(marker => {
-                        map.removeMarker(marker);
+                        map.removeLayer(marker);
                     });
                     
                     waypoints = [];
@@ -469,7 +492,52 @@ require_once 'config.php';
                 
                 console.log('Submitting game with', waypoints.length, 'waypoints');
             });
-        });
+        }
     </script>
+    
+    <style>
+        /* Custom marker styles */
+        .custom-marker {
+            background: none;
+            border: none;
+        }
+        
+        .marker-pin {
+            width: 30px;
+            height: 42px;
+            position: relative;
+            background: #f7931e;
+            border-radius: 50% 50% 50% 0;
+            transform: rotate(-45deg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .marker-pin::after {
+            content: '';
+            width: 20px;
+            height: 20px;
+            margin: 3px 0 0 3px;
+            background: white;
+            position: absolute;
+            border-radius: 50%;
+        }
+        
+        .marker-pin span {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            margin: 3px 0 0 3px;
+            font-size: 12px;
+            font-weight: bold;
+            color: #f7931e;
+            z-index: 10;
+            transform: rotate(45deg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+    </style>
 </body>
 </html>
