@@ -1,0 +1,18 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: bojovka_db
+    restart: always
+    environment:
+      MYSQL_DATABASE: bojovka
+      MYSQL_USER: bojovka_user
+      MYSQL_PASSWORD: bojovka_pass
+      MYSQL_ROOT_PASSWORD: root_pass
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+
+volumes:
+  mysql_data:
