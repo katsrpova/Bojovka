@@ -166,45 +166,86 @@ $adventures = [
 
     <!-- Join by Code Modal -->
     <div class="modal" id="joinModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>Join Adventure</h3>
-                <button class="btn-close" onclick="closeJoinModal()">
-                    <i class="fas fa-times"></i>
+    <div class="modal-content">
+ 
+        <!-- Header -->
+        <div class="modal-header">
+            <h3>Připojit se ke hře</h3>
+            <button class="btn-close" onclick="closeJoinModal()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+ 
+        <!-- Tab switcher -->
+        <div class="modal-body">
+            <div class="join-tabs">
+                <button class="join-tab active" onclick="switchJoinTab('code')" id="tabCode">
+                    <i class="fas fa-keyboard"></i> Zadat kód
+                </button>
+                <button class="join-tab" onclick="switchJoinTab('qr')" id="tabQr">
+                    <i class="fas fa-qrcode"></i> Skenovat QR
                 </button>
             </div>
-            <div class="modal-body">
-                <div class="join-tabs">
-                    <button class="join-tab active" onclick="switchJoinTab('code')">
-                        <i class="fas fa-keyboard"></i>
-                        Enter Code
-                    </button>
-                    <button class="join-tab" onclick="switchJoinTab('qr')">
-                        <i class="fas fa-qrcode"></i>
-                        Scan QR Code
-                    </button>
-                </div>
-
-                <!-- Code Input -->
-                <div class="join-content active" id="codeContent">
-                    <p class="join-description">Enter the 6-digit game code</p>
-                    <input type="text" class="code-input" id="gameCode" placeholder="000000" maxlength="6" pattern="[0-9]*">
-                    <button class="btn-join" onclick="joinByCode()">
-                        Join Adventure
-                    </button>
-                </div>
-
-                <!-- QR Scanner -->
-                <div class="join-content" id="qrContent">
-                    <div class="qr-placeholder">
-                        <i class="fas fa-camera"></i>
-                        <p>QR Code Scanner</p>
-                        <small>Point your camera at the QR code</small>
-                    </div>
-                </div>
+ 
+            <!-- ── CODE TAB ── -->
+            <div class="join-content active" id="codeContent">
+                <p class="join-description">Zadejte 6-místný kód (písmena + čísla)</p>
+ 
+                <input
+                    type="text"
+                    class="code-input"
+                    id="gameCode"
+                    placeholder="ABC123"
+                    maxlength="6"
+                    autocomplete="off"
+                    autocapitalize="characters"
+                    spellcheck="false"
+                    oninput="onCodeInput(this)"
+                >
+                <div id="codeValidationMsg" style="min-height:24px;margin-bottom:10px;font-size:13px;text-align:center;"></div>
+ 
+                <button class="btn-join" onclick="joinByCode()" id="joinCodeBtn" disabled>
+                    <i class="fas fa-arrow-right"></i> Připojit se
+                </button>
             </div>
-        </div>
+ 
+            <!-- ── QR TAB ── -->
+            <div class="join-content" id="qrContent">
+                <!-- Camera view -->
+                <div id="scannerContainer" style="position:relative;border-radius:12px;overflow:hidden;background:#000;aspect-ratio:1/1;margin-bottom:14px;">
+                    <video id="qrVideo" style="width:100%;height:100%;object-fit:cover;" playsinline muted></video>
+                    <!-- Overlay frame -->
+                    <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;">
+                        <div style="
+                            width:65%;aspect-ratio:1/1;
+                            border:3px solid rgba(247,147,30,.9);
+                            border-radius:16px;
+                            box-shadow:0 0 0 9999px rgba(0,0,0,.45);
+                        "></div>
+                    </div>
+                    <!-- Corner deco -->
+                    <svg style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;" viewBox="0 0 100 100" preserveAspectRatio="none">
+                        <polyline points="17.5,23.5 17.5,17.5 23.5,17.5" stroke="#f7931e" stroke-width="2" fill="none"/>
+                        <polyline points="76.5,17.5 82.5,17.5 82.5,23.5" stroke="#f7931e" stroke-width="2" fill="none"/>
+                        <polyline points="17.5,76.5 17.5,82.5 23.5,82.5" stroke="#f7931e" stroke-width="2" fill="none"/>
+                        <polyline points="82.5,76.5 82.5,82.5 76.5,82.5" stroke="#f7931e" stroke-width="2" fill="none"/>
+                    </svg>
+                </div>
+ 
+                <div id="scanStatus" style="text-align:center;font-size:14px;color:#666;margin-bottom:14px;">
+                    <i class="fas fa-camera" style="margin-right:6px;"></i>Namiřte kameru na QR kód
+                </div>
+                <button class="btn-join" id="startScanBtn" onclick="startQrScanner()">
+                    <i class="fas fa-camera"></i> Zapnout kameru
+                </button>
+                <button class="btn-join" id="stopScanBtn" onclick="stopQrScanner()" style="display:none;background:#666;">
+                    <i class="fas fa-stop"></i> Zastavit skener
+                </button>
+            </div>
+ 
+        </div><!-- /.modal-body -->
     </div>
+</div>
 
     <script src="dashboard.js"></script>
 </body>
