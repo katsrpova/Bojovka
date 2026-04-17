@@ -2,3 +2,4 @@
 config.php
 vendor/
 games/
+mysql_data/
