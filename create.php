@@ -77,7 +77,7 @@ $apiKey = MAPY_CZ_API_KEY;
                 </div>
             </div>
 
-            <form id="createGameForm" method="POST" action="save_game.php">
+            <form id="createGameForm" method="POST" action="savegame.php">
                 <!-- Základní informace -->
                 <div class="form-section">
                     <h2 class="form-section-title">

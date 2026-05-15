@@ -165,6 +165,7 @@ $adventures = [
     </main>
 
     <!-- Join by Code Modal -->
+    <script src="join_modal.js"></script>
     <div class="modal" id="joinModal">
     <div class="modal-content">
  
