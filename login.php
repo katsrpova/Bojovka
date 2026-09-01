@@ -8,10 +8,12 @@ use League\OAuth2\Client\Provider\Google;
 
 // --- 2. KONFIGURACE ---
 // TYTO HODNOTY MUSÍ BÝT STEJNÉ JAKO V GOOGLE CLOUD CONSOLE 
+require 'vendor/autoload.php';
+require_once 'config.php';
 $provider = new Google([    
-    'clientId' => $_ENV['CLIENT_ID'],
-    'clientSecret' => $_ENV['CLIENT_SECRET'],
-    'redirectUri'  => 'http://localhost/bojovka/callback.php',
+    'clientId'     => GOOGLE_CLIENT_ID,
+    'clientSecret' => GOOGLE_CLIENT_SECRET,
+    'redirectUri'  => GOOGLE_REDIRECT_URI,
 ]);
 
 // 3. Generování URL pro přesměrování na Google

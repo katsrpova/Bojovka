@@ -2,16 +2,15 @@
 // 1. Spuštění session a připojení autoloaderu
 session_start();
 require 'vendor/autoload.php';
+require_once 'config.php';  // ← přidej toto
 
 use League\OAuth2\Client\Provider\Google;
 use League\OAuth2\Client\Provider\Exception\IdentityProviderException;
 
-// --- 2. KONFIGURACE ---
-// Musí být stejné jako v login.php
 $provider = new Google([
-    'clientId'     => '96149857284-hd9skkhktlkq4s6s7n9dd3k0dbr5bevk.apps.googleusercontent.com',      
-    'clientSecret' => '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',    
-    'redirectUri'  => 'http://localhost/bojovka/callback.php', 
+    'clientId'     => GOOGLE_CLIENT_ID,     
+    'clientSecret' => GOOGLE_CLIENT_SECRET, 
+    'redirectUri'  => GOOGLE_REDIRECT_URI,  
 ]);
 
 // 3. Kontrola autorizačního kódu a stavu (State)
@@ -56,14 +55,13 @@ if (empty($_GET['state']) || ($_GET['state'] !== $_SESSION['oauth2state'])) {
         $_SESSION['user_id'] = $userId;
         $_SESSION['user_name'] = $userName;
         $_SESSION['user_email'] = $userEmail;
-        
+
+        header('Location: dashboard.php');
+        exit;
         // 4. Přesměruj uživatele na hlavní stránku hry (odkomentuj až budeš mít stránku):
         // header('Location: game.php');
         // exit;
 
-        // Pro testování - zobraz všechna dostupná data
-        echo '<h3>Dostupná data uživatele:</h3>';
-        echo '<pre>' . print_r($userData, true) . '</pre>';
 
     } catch (IdentityProviderException $e) {
         // Zpracování chyb od Google
