@@ -43,29 +43,25 @@ if (empty($_GET['state']) || ($_GET['state'] !== $_SESSION['oauth2state'])) {
         $userName = $userData['name'] ?? 'Uživatel';
         $userEmail = $userData['email'] ?? '';
 
-        // --- ÚSPĚŠNÉ PŘIHLÁŠENÍ ---
-        echo '<h2>✅ Úspěšně přihlášen! Vítej, ' . htmlspecialchars($userName) . '!</h2>';
-        echo '<p>ID uživatele: <strong>' . htmlspecialchars($userId) . '</strong></p>';
-        echo '<p>E-mail: <strong>' . htmlspecialchars($userEmail) . '</strong></p>';
+        // Založ uživatele v DB, pokud ještě neexistuje, jinak aktualizuj jméno/email
+        upsertUser($userId, $userName, $userEmail ?: null, false);
 
-        // ZDE ZAČÍNÁ TVÁ LOGIKA:
-        // 1. Zkontroluj, zda uživatel s tímto ID/e-mailem existuje v tvé databázi.
-        // 2. Pokud ne, vytvoř nový účet.
-        // 3. Vytvoř lokální session pro uživatele
+        // Vytvoř lokální session pro uživatele
         $_SESSION['user_id'] = $userId;
         $_SESSION['user_name'] = $userName;
         $_SESSION['user_email'] = $userEmail;
 
         header('Location: dashboard.php');
         exit;
-        // 4. Přesměruj uživatele na hlavní stránku hry (odkomentuj až budeš mít stránku):
-        // header('Location: game.php');
-        // exit;
-
 
     } catch (IdentityProviderException $e) {
         // Zpracování chyb od Google
         echo '<h2>Chyba při komunikaci s Googlem:</h2>';
+        echo '<pre>' . htmlspecialchars($e->getMessage()) . '</pre>';
+        echo '<p><a href="index.html">Zkusit znovu</a></p>';
+        exit;
+    } catch (PDOException $e) {
+        echo '<h2>Chyba při ukládání uživatele do databáze:</h2>';
         echo '<pre>' . htmlspecialchars($e->getMessage()) . '</pre>';
         echo '<p><a href="index.html">Zkusit znovu</a></p>';
         exit;

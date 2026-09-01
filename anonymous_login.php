@@ -1,5 +1,6 @@
 <?php
 session_start();
+require_once 'config.php';
 
 // Seznam zvířat pro náhodné jméno
 $animals = [
@@ -20,6 +21,9 @@ $anonymousName = "Anonymní " . $randomAnimal;
 
 // Vytvoř jedinečné ID (kombinace timestamp a náhodného čísla)
 $anonymousId = "anon_" . time() . "_" . $randomNumber;
+
+// Založ anonymního uživatele v DB
+upsertUser($anonymousId, $anonymousName, null, true);
 
 // Ulož do session
 $_SESSION['user_id'] = $anonymousId;
