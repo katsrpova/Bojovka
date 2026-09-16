@@ -8,7 +8,7 @@ if (!isset($_SESSION['user_id'])) {
 
 require_once 'config.php';
 
-$gameId    = intval($_GET['id'] ?? 0);
+$gameId    = trim($_GET['id'] ?? '');
 $userName  = $_SESSION['user_name'];
 $isAnonymous = isset($_SESSION['is_anonymous']) && $_SESSION['is_anonymous'];
 
@@ -17,14 +17,14 @@ if (!$gameId) {
     exit;
 }
 
-// Mock data (v produkci z DB)
-$games = [
-    1 => ['id' => 1, 'title' => 'Prague Castle Adventure', 'difficulty' => 'medium', 'waypoints' => 3],
-    2 => ['id' => 2, 'title' => 'Vltava River Trail',      'difficulty' => 'easy',   'waypoints' => 2],
-    3 => ['id' => 3, 'title' => 'Old Town Mystery',        'difficulty' => 'hard',   'waypoints' => 3],
-];
+$stmt = getDB()->prepare(
+    "SELECT g.id, g.title, g.difficulty, COUNT(w.id) AS waypoints
+     FROM games g LEFT JOIN waypoints w ON w.game_id = g.id
+     WHERE g.id = :id GROUP BY g.id"
+);
+$stmt->execute(['id' => $gameId]);
+$game = $stmt->fetch();
 
-$game = $games[$gameId] ?? null;
 if (!$game) {
     header('Location: dashboard.php');
     exit;
@@ -404,7 +404,7 @@ $playUrl = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : '
 <div class="toast" id="toast"></div>
 
 <script>
-const GAME_ID    = <?php echo $gameId; ?>;
+const GAME_ID    = <?php echo json_encode($gameId); ?>;
 const GAME_TITLE = <?php echo json_encode($game['title']); ?>;
 
 let currentCode = null;
@@ -423,7 +423,7 @@ async function generateOrLoadCode() {
         const res = await fetch('game_code.php?action=generate', {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: `game_id=${GAME_ID}&game_title=${encodeURIComponent(GAME_TITLE)}`,
+            body: `game_id=${encodeURIComponent(GAME_ID)}&game_title=${encodeURIComponent(GAME_TITLE)}`,
         });
         const data = await res.json();
 

@@ -22,129 +22,40 @@ if (!$gameId) {
     exit;
 }
 
-// Mock data pro různé hry (později z databáze)
-$games = [
-    1 => [
-        'id' => 1,
-        'title' => 'Prague Castle Adventure',
-        'description' => 'Explore the historic Prague Castle area and discover hidden secrets',
-        'difficulty' => 'medium',
-        'waypoints' => [
-            [
-                'id' => 1,
-                'lat' => 50.0875,
-                'lng' => 14.4214,
-                'name' => 'Hradčanské náměstí',
-                'description' => 'Vítejte na Hradčanském náměstí! Najděte sochu T.G. Masaryka a odpovězte na otázku.',
-                'question' => 'V jakém roce byla postavena socha T.G. Masaryka?',
-                'answer' => '1928',
-                'type' => 'question',
-                'completed' => false
-            ],
-            [
-                'id' => 2,
-                'lat' => 50.0910,
-                'lng' => 14.4016,
-                'name' => 'Strahovský klášter',
-                'description' => 'Vydejte se ke Strahovskému klášteru. Najděte vstupní bránu.',
-                'question' => 'Jaký řád sídlí ve Strahovském klášteře?',
-                'answer' => 'premonstrátský',
-                'type' => 'question',
-                'completed' => false
-            ],
-            [
-                'id' => 3,
-                'lat' => 50.0870,
-                'lng' => 14.4110,
-                'name' => 'Petřínská rozhledna',
-                'description' => 'Vyšlapejte si na Petřínskou rozhlednu a vychutnejte si výhled.',
-                'question' => 'Kolik metrů měří Petřínská rozhledna?',
-                'answer' => '63.5',
-                'type' => 'question',
-                'completed' => false
-            ]
-        ]
-    ],
-    2 => [
-        'id' => 2,
-        'title' => 'Vltava River Trail',
-        'description' => 'Follow the beautiful Vltava river through Prague',
-        'difficulty' => 'easy',
-        'waypoints' => [
-            [
-                'id' => 1,
-                'lat' => 50.0863,
-                'lng' => 14.4113,
-                'name' => 'Karlův most',
-                'description' => 'Začněte na slavném Karlově mostě.',
-                'question' => 'Kolik soch je na Karlově mostě?',
-                'answer' => '30',
-                'type' => 'question',
-                'completed' => false
-            ],
-            [
-                'id' => 2,
-                'lat' => 50.0755,
-                'lng' => 14.4378,
-                'name' => 'Náplavka',
-                'description' => 'Pokračujte po nábřeží k Náplavce.',
-                'question' => 'Jaká řeka protéká Prahou?',
-                'answer' => 'vltava',
-                'type' => 'question',
-                'completed' => false
-            ]
-        ]
-    ],
-    3 => [
-        'id' => 3,
-        'title' => 'Old Town Mystery',
-        'description' => 'Solve puzzles hidden in Prague\'s Old Town',
-        'difficulty' => 'hard',
-        'waypoints' => [
-            [
-                'id' => 1,
-                'lat' => 50.0875,
-                'lng' => 14.4213,
-                'name' => 'Staroměstské náměstí',
-                'description' => 'Začněte na Staroměstském náměstí u orloje.',
-                'question' => 'V jakém století byl postaven Pražský orloj?',
-                'answer' => '15',
-                'type' => 'question',
-                'completed' => false
-            ],
-            [
-                'id' => 2,
-                'lat' => 50.0889,
-                'lng' => 14.4244,
-                'name' => 'Týnský chrám',
-                'description' => 'Vydejte se k Týnskému chrámu.',
-                'question' => 'Kolik věží má Týnský chrám?',
-                'answer' => '2',
-                'type' => 'question',
-                'completed' => false
-            ],
-            [
-                'id' => 3,
-                'lat' => 50.0865,
-                'lng' => 14.4208,
-                'name' => 'Prašná brána',
-                'description' => 'Najděte Prašnou bránu.',
-                'question' => 'V jakém roce byla Prašná brána dokončena?',
-                'answer' => '1475',
-                'type' => 'question',
-                'completed' => false
-            ]
-        ]
-    ]
-];
+$pdo = getDB();
 
-// Načti hru podle ID
-$game = $games[$gameId] ?? null;
+$gameStmt = $pdo->prepare("SELECT id, title, description, difficulty FROM games WHERE id = :id");
+$gameStmt->execute(['id' => $gameId]);
+$game = $gameStmt->fetch();
 
 if (!$game) {
     header('Location: dashboard.php');
     exit;
 }
+
+$wpStmt = $pdo->prepare(
+    "SELECT id, name, description, question, answer, lat, lng
+     FROM waypoints WHERE game_id = :id ORDER BY order_index ASC"
+);
+$wpStmt->execute(['id' => $gameId]);
+$waypoints = $wpStmt->fetchAll();
+
+if (empty($waypoints)) {
+    header('Location: dashboard.php');
+    exit;
+}
+
+foreach ($waypoints as &$wp) {
+    $wp['lat'] = (float)$wp['lat'];
+    $wp['lng'] = (float)$wp['lng'];
+    $wp['completed'] = false;
+}
+unset($wp);
+
+$game['waypoints'] = $waypoints;
+
+// Připočítej odehrání hry
+$pdo->prepare("UPDATE games SET play_count = play_count + 1 WHERE id = :id")->execute(['id' => $gameId]);
 
 // Převod dat na JSON pro JavaScript
 $gameJson = json_encode($game, JSON_UNESCAPED_UNICODE);

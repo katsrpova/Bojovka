@@ -1,5 +1,6 @@
 <?php
 session_start();
+require_once 'config.php';
 
 // Kontrola přihlášení
 if (!isset($_SESSION['user_id'])) {
@@ -45,42 +46,58 @@ if (!empty($errors)) {
     exit;
 }
 
-// TODO: Zde by mělo být uložení do databáze
-// Pro teď jen vypíšeme data
-
 $userId = $_SESSION['user_id'];
 $userName = $_SESSION['user_name'];
 
 // Vytvoř unikátní ID pro hru
 $gameId = uniqid('game_', true);
 
-// Data pro uložení
-$gameData = [
-    'id' => $gameId,
-    'name' => $gameName,
-    'description' => $gameDescription,
-    'difficulty' => $difficulty,
-    'estimated_time' => $estimatedTime,
-    'creator_id' => $userId,
-    'creator_name' => $userName,
-    'waypoints' => $waypoints,
-    'created_at' => date('Y-m-d H:i:s')
-];
+$pdo = null;
+try {
+    $pdo = getDB();
+    $pdo->beginTransaction();
 
-// Pro demo účely - uložíme do session (v produkci by to bylo v DB)
-if (!isset($_SESSION['games'])) {
-    $_SESSION['games'] = [];
+    $gameStmt = $pdo->prepare(
+        "INSERT INTO games (id, title, description, difficulty, estimated_time, creator_id, creator_name)
+         VALUES (:id, :title, :description, :difficulty, :estimated_time, :creator_id, :creator_name)"
+    );
+    $gameStmt->execute([
+        'id'             => $gameId,
+        'title'          => $gameName,
+        'description'    => $gameDescription,
+        'difficulty'     => $difficulty,
+        'estimated_time' => $estimatedTime,
+        'creator_id'     => $userId,
+        'creator_name'   => $userName,
+    ]);
+
+    $wpStmt = $pdo->prepare(
+        "INSERT INTO waypoints (game_id, order_index, name, description, question, answer, lat, lng)
+         VALUES (:game_id, :order_index, :name, :description, :question, :answer, :lat, :lng)"
+    );
+    foreach ($waypoints as $index => $wp) {
+        $wpStmt->execute([
+            'game_id'     => $gameId,
+            'order_index' => $index,
+            'name'        => $wp['name'] ?? ('Úkol ' . ($index + 1)),
+            'description' => $wp['description'] ?? '',
+            'question'    => $wp['question'] ?? '',
+            'answer'      => $wp['answer'] ?? '',
+            'lat'         => $wp['lat'],
+            'lng'         => $wp['lng'],
+        ]);
+    }
+
+    $pdo->commit();
+} catch (PDOException $e) {
+    if ($pdo !== null && $pdo->inTransaction()) {
+        $pdo->rollBack();
+    }
+    $_SESSION['errors'] = ["Chyba při ukládání hry do databáze: " . $e->getMessage()];
+    $_SESSION['form_data'] = $_POST;
+    header('Location: create.php');
+    exit;
 }
-$_SESSION['games'][$gameId] = $gameData;
-
-// Uložíme také do souboru pro persistenci
-$gamesDir = __DIR__ . '/games';
-if (!is_dir($gamesDir)) {
-    mkdir($gamesDir, 0755, true);
-}
-
-$gameFile = $gamesDir . '/' . $gameId . '.json';
-file_put_contents($gameFile, json_encode($gameData, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
 
 // Úspěšná zpráva
 $_SESSION['success'] = "Hra '{$gameName}' byla úspěšně vytvořena!";

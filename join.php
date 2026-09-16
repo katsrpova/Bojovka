@@ -19,12 +19,20 @@ if (!$code || strlen($code) !== 6) {
     exit;
 }
 
+// Ulož si session ID, pak zámek nad session souborem uvolni - jinak by interní
+// HTTP volání na game_code.php (které si session zamyká znovu) uvázlo v deadlocku.
+$sessionId = session_id();
+session_write_close();
+
 // Ověř kód přes API endpoint
+$baseUrl = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http')
+    . '://' . $_SERVER['HTTP_HOST'] . dirname($_SERVER['SCRIPT_NAME']);
+
 $ch = curl_init();
 curl_setopt_array($ch, [
-    CURLOPT_URL            => 'http://localhost/bojovka/game_code.php?action=validate&code=' . urlencode($code),
+    CURLOPT_URL            => $baseUrl . '/game_code.php?action=validate&code=' . urlencode($code),
     CURLOPT_RETURNTRANSFER => true,
-    CURLOPT_COOKIE         => 'PHPSESSID=' . session_id(),
+    CURLOPT_COOKIE         => 'PHPSESSID=' . $sessionId,
 ]);
 $response = curl_exec($ch);
 curl_close($ch);
@@ -38,6 +46,6 @@ if (!$data || !$data['valid']) {
 }
 
 // Přesměruj na hru
-header('Location: play.php?id=' . intval($data['game_id']));
+header('Location: play.php?id=' . urlencode($data['game_id']));
 exit;
 ?>

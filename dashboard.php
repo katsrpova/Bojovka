@@ -10,42 +10,16 @@ if (!isset($_SESSION['user_id'])) {
 $userName = $_SESSION['user_name'];
 $isAnonymous = isset($_SESSION['is_anonymous']) && $_SESSION['is_anonymous'];
 
-// Mock data her (později z databáze)
-$adventures = [
-    [
-        'id' => 1,
-        'title' => 'Prague Castle Adventure',
-        'description' => 'Explore the historic Prague Castle area and discover hidden secrets',
-        'distance' => '5.2 km',
-        'duration' => '120 min',
-        'rating' => 4.8,
-        'plays' => 342,
-        'difficulty' => 'medium',
-        'author' => 'CzechExplorer'
-    ],
-    [
-        'id' => 2,
-        'title' => 'Vltava River Trail',
-        'description' => 'Follow the beautiful Vltava river through Prague',
-        'distance' => '8.5 km',
-        'duration' => '180 min',
-        'rating' => 4.5,
-        'plays' => 218,
-        'difficulty' => 'easy',
-        'author' => 'RiverRunner'
-    ],
-    [
-        'id' => 3,
-        'title' => 'Old Town Mystery',
-        'description' => 'Solve puzzles hidden in Prague\'s Old Town',
-        'distance' => '3.8 km',
-        'duration' => '150 min',
-        'rating' => 4.9,
-        'plays' => 156,
-        'difficulty' => 'hard',
-        'author' => 'MysteryMaker'
-    ]
-];
+require_once 'config.php';
+
+$adventures = getDB()->query(
+    "SELECT g.id, g.title, g.description, g.difficulty, g.estimated_time, g.creator_name, g.play_count,
+            COUNT(w.id) AS waypoint_count
+     FROM games g
+     LEFT JOIN waypoints w ON w.game_id = g.id
+     GROUP BY g.id
+     ORDER BY g.created_at DESC"
+)->fetchAll();
 ?>
 <!DOCTYPE html>
 <html lang="cs">
@@ -122,39 +96,38 @@ $adventures = [
 
             <!-- Adventures Grid -->
             <div class="adventures-grid" id="adventuresGrid">
+                <?php if (empty($adventures)): ?>
+                <p class="no-tasks">Zatím tu nejsou žádné hry. Buď první, kdo nějakou vytvoří!</p>
+                <?php endif; ?>
                 <?php foreach ($adventures as $adventure): ?>
                 <article class="adventure-card">
                     <div class="card-header">
                         <h3><?php echo htmlspecialchars($adventure['title']); ?></h3>
-                        <span class="difficulty-badge <?php echo $adventure['difficulty']; ?>">
-                            <?php echo $adventure['difficulty']; ?>
+                        <span class="difficulty-badge <?php echo htmlspecialchars($adventure['difficulty']); ?>">
+                            <?php echo htmlspecialchars($adventure['difficulty']); ?>
                         </span>
                     </div>
-                    
+
                     <p class="description"><?php echo htmlspecialchars($adventure['description']); ?></p>
-                    
+
                     <div class="adventure-stats">
                         <div class="stat">
                             <i class="fas fa-map-marker-alt"></i>
-                            <span><?php echo $adventure['distance']; ?></span>
+                            <span><?php echo (int)$adventure['waypoint_count']; ?> úkolů</span>
                         </div>
                         <div class="stat">
                             <i class="fas fa-clock"></i>
-                            <span><?php echo $adventure['duration']; ?></span>
-                        </div>
-                        <div class="stat">
-                            <i class="fas fa-star"></i>
-                            <span><?php echo $adventure['rating']; ?>/5</span>
+                            <span><?php echo (int)$adventure['estimated_time']; ?> min</span>
                         </div>
                         <div class="stat">
                             <i class="fas fa-users"></i>
-                            <span><?php echo $adventure['plays']; ?> plays</span>
+                            <span><?php echo (int)$adventure['play_count']; ?> plays</span>
                         </div>
                     </div>
 
                     <div class="card-footer">
-                        <span class="author">by <?php echo htmlspecialchars($adventure['author']); ?></span>
-                        <button class="btn-start" onclick="startAdventure(<?php echo $adventure['id']; ?>)">
+                        <span class="author">by <?php echo htmlspecialchars($adventure['creator_name']); ?></span>
+                        <button class="btn-start" onclick='startAdventure(<?php echo json_encode($adventure['id']); ?>)'>
                             Start Adventure
                         </button>
                     </div>

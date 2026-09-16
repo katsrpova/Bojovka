@@ -133,6 +133,8 @@ function addWaypoint(latlng) {
         lng: latlng.lng,
         name: `Úkol ${waypointCounter}`,
         description: '',
+        question: '',
+        answer: '',
         type: 'checkpoint'
     };
     
@@ -168,6 +170,22 @@ function updateWaypointDescription(id, description) {
     const wp = waypoints.find(w => w.id === id);
     if (wp) {
         wp.description = description;
+        updateWaypointsData();
+    }
+}
+
+function updateWaypointQuestion(id, question) {
+    const wp = waypoints.find(w => w.id === id);
+    if (wp) {
+        wp.question = question;
+        updateWaypointsData();
+    }
+}
+
+function updateWaypointAnswer(id, answer) {
+    const wp = waypoints.find(w => w.id === id);
+    if (wp) {
+        wp.answer = answer;
         updateWaypointsData();
     }
 }
@@ -215,11 +233,25 @@ function updateTasksList() {
                     placeholder="Název úkolu"
                     onchange="updateWaypointName(${wp.id}, this.value)"
                 >
-                <textarea 
-                    class="task-textarea" 
-                    placeholder="Popis úkolu nebo otázka..."
+                <textarea
+                    class="task-textarea"
+                    placeholder="Popis úkolu / zadání..."
                     onchange="updateWaypointDescription(${wp.id}, this.value)"
                 >${wp.description}</textarea>
+                <input
+                    type="text"
+                    class="task-input"
+                    value="${wp.question}"
+                    placeholder="Otázka pro hráče"
+                    onchange="updateWaypointQuestion(${wp.id}, this.value)"
+                >
+                <input
+                    type="text"
+                    class="task-input"
+                    value="${wp.answer}"
+                    placeholder="Správná odpověď"
+                    onchange="updateWaypointAnswer(${wp.id}, this.value)"
+                >
             </div>
             <button type="button" class="btn-delete" onclick="removeWaypoint(${wp.id})">
                 <i class="fas fa-trash"></i>
@@ -408,10 +440,10 @@ function initEventListeners() {
             }
         }
         
-        // Kontrola, zda všechny úkoly mají popis
-        const emptyTasks = waypoints.filter(wp => !wp.description.trim());
+        // Kontrola, zda všechny úkoly mají popis, otázku a odpověď
+        const emptyTasks = waypoints.filter(wp => !wp.description.trim() || !wp.question.trim() || !wp.answer.trim());
         if (emptyTasks.length > 0) {
-            if (!confirm(`${emptyTasks.length} úkol(y) nemají popis. Chceš pokračovat?`)) {
+            if (!confirm(`${emptyTasks.length} úkol(y) nemají popis, otázku nebo odpověď. Hráči je pak nebudou moci splnit. Chceš pokračovat?`)) {
                 e.preventDefault();
                 return;
             }

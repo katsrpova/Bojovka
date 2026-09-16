@@ -83,7 +83,7 @@ switch ($action) {
             exit;
         }
 
-        $gameId   = intval($_POST['game_id'] ?? 0);
+        $gameId   = trim($_POST['game_id'] ?? '');
         $gameTitle = trim($_POST['game_title'] ?? '');
 
         if (!$gameId || !$gameTitle) {
