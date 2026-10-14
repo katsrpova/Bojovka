@@ -45,10 +45,16 @@ if (empty($waypoints)) {
     exit;
 }
 
-foreach ($waypoints as &$wp) {
+$progStmt = $pdo->prepare(
+    "SELECT waypoints_completed FROM game_progress WHERE user_id = :uid AND game_id = :gid"
+);
+$progStmt->execute(['uid' => $_SESSION['user_id'], 'gid' => $gameId]);
+$completedCount = (int)($progStmt->fetchColumn() ?: 0);
+
+foreach ($waypoints as $index => &$wp) {
     $wp['lat'] = (float)$wp['lat'];
     $wp['lng'] = (float)$wp['lng'];
-    $wp['completed'] = false;
+    $wp['completed'] = $index < $completedCount;
 }
 unset($wp);
 

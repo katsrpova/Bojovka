@@ -4,8 +4,9 @@ let userLocationMarker = null;
 let userLocationCircle = null;
 let routeLine = null;
 let markers = [];
-let currentTaskIndex = 0;
-let completedTasks = 0;
+// Obnov postup podle toho, co už hráč v minulosti splnil (viz play.php)
+let completedTasks = GAME_DATA.waypoints.filter(w => w.completed).length;
+let currentTaskIndex = Math.min(completedTasks, GAME_DATA.waypoints.length - 1);
 let startTime = Date.now();
 let watchId = null;
 let userPosition = null;
@@ -152,7 +153,7 @@ function startLocationTracking() {
             handleLocationError,
             {
                 enableHighAccuracy: true,
-                timeout: 5000,
+                timeout: 15000,
                 maximumAge: 0
             }
         );
@@ -200,8 +201,29 @@ function updateUserLocation(position) {
     checkTaskProximity();
 }
 
+let locationErrorNotified = false;
+
 function handleLocationError(error) {
     console.error('Geolocation error:', error.message);
+
+    if (locationErrorNotified) return;
+    locationErrorNotified = true;
+
+    let message;
+    switch (error.code) {
+        case error.PERMISSION_DENIED:
+            message = 'Přístup k poloze byl zamítnut. Povolte polohu v nastavení prohlížeče, jinak se úkoly nebudou moct odemykat.';
+            break;
+        case error.POSITION_UNAVAILABLE:
+            message = 'Polohu se nepodařilo zjistit. Zkontrolujte, že máte na mobilu zapnuté GPS.';
+            break;
+        case error.TIMEOUT:
+            message = 'Zjišťování polohy trvá dlouho. Zkuste se přesunout na otevřené prostranství.';
+            break;
+        default:
+            message = 'Nepodařilo se zjistit vaši polohu.';
+    }
+    showNotification(message);
 }
 
 function checkTaskProximity() {
@@ -483,6 +505,15 @@ function showTaskList() {
     }
 }
 
+// ==================== UKLÁDÁNÍ POSTUPU ====================
+function saveProgress(waypointIndex) {
+    fetch('progress.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: `game_id=${encodeURIComponent(GAME_DATA.id)}&waypoint_index=${waypointIndex}`
+    }).catch(err => console.error('Nepodařilo se uložit postup:', err));
+}
+
 // ==================== ODPOVĚDI NA ÚKOLY ====================
 function submitAnswer(taskIndex) {
     const answerInput = document.getElementById('answerInput');
@@ -518,6 +549,8 @@ function removeAccents(str) {
 function completeTask(taskIndex) {
     GAME_DATA.waypoints[taskIndex].completed = true;
     completedTasks++;
+
+    saveProgress(taskIndex);
     
     // Aktualizuj marker
     updateMarker(taskIndex);
