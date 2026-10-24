@@ -797,6 +797,10 @@ body {
     gap: 15px;
 }
 
+#exitModal .modal-body p {
+    margin-bottom: 20px;
+}
+
 .completion-actions .btn {
     flex: 1;
 }

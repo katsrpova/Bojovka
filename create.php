@@ -28,7 +28,7 @@ $apiKey = MAPY_CZ_API_KEY;
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     
     <!-- Custom CSS -->
-    <link rel="stylesheet" href="create.css">
+    <link rel="stylesheet" href="create.css?v=<?php echo @filemtime(__DIR__ . '/create.css'); ?>">
 </head>
 <body>
     <!-- Header -->
@@ -229,6 +229,6 @@ $apiKey = MAPY_CZ_API_KEY;
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     
     <!-- Custom JS -->
-    <script src="create.js"></script>
+    <script src="create.js?v=<?php echo @filemtime(__DIR__ . '/create.js'); ?>"></script>
 </body>
 </html>

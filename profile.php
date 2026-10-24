@@ -10,20 +10,62 @@ if (!isset($_SESSION['user_id'])) {
 $userName = $_SESSION['user_name'];
 $isAnonymous = isset($_SESSION['is_anonymous']) && $_SESSION['is_anonymous'];
 
-// Mock data pro demo (později z databáze)
-$userStats = [
-    'points' => 625,
-    'completed' => 2,
-    'created' => 0,
-    'friends' => 5
-];
+require_once 'config.php';
+$pdo = getDB();
+$userId = $_SESSION['user_id'];
 
-$friends = [
-    ['name' => 'CzechExplorer', 'initial' => 'C', 'created' => 12, 'played' => 45, 'online' => true],
-    ['name' => 'RiverRunner', 'initial' => 'R', 'created' => 8, 'played' => 32, 'online' => true],
-    ['name' => 'MysteryMaker', 'initial' => 'M', 'created' => 15, 'played' => 28, 'online' => false],
-    ['name' => 'AdventureSeeker', 'initial' => 'A', 'created' => 5, 'played' => 67, 'online' => false],
-    ['name' => 'TreasureHunter', 'initial' => 'T', 'created' => 20, 'played' => 89, 'online' => true],
+$pointsStmt = $pdo->prepare("SELECT points FROM users WHERE id = :id");
+$pointsStmt->execute(['id' => $userId]);
+$points = (int)($pointsStmt->fetchColumn() ?: 0);
+
+$completedStmt = $pdo->prepare("SELECT COUNT(*) FROM game_progress WHERE user_id = :id AND completed = 1");
+$completedStmt->execute(['id' => $userId]);
+$completedCount = (int)$completedStmt->fetchColumn();
+
+$createdStmt = $pdo->prepare(
+    "SELECT g.id, g.title, g.play_count, COUNT(w.id) AS waypoint_count
+     FROM games g LEFT JOIN waypoints w ON w.game_id = g.id
+     WHERE g.creator_id = :id GROUP BY g.id ORDER BY g.created_at DESC"
+);
+$createdStmt->execute(['id' => $userId]);
+$createdGames = $createdStmt->fetchAll();
+
+$playedStmt = $pdo->prepare(
+    "SELECT g.id, g.title, gp.waypoints_completed, gp.completed,
+            (SELECT COUNT(*) FROM waypoints w WHERE w.game_id = g.id) AS waypoint_count
+     FROM game_progress gp JOIN games g ON g.id = gp.game_id
+     WHERE gp.user_id = :id ORDER BY gp.started_at DESC"
+);
+$playedStmt->execute(['id' => $userId]);
+$playedGames = $playedStmt->fetchAll();
+
+$friendsStmt = $pdo->prepare(
+    "SELECT u.id, u.name,
+            (SELECT COUNT(*) FROM games g WHERE g.creator_id = u.id) AS created_count,
+            (SELECT COUNT(*) FROM game_progress gp WHERE gp.user_id = u.id AND gp.completed = 1) AS played_count
+     FROM friendships f JOIN users u ON u.id = f.friend_id
+     WHERE f.user_id = :id ORDER BY u.name"
+);
+$friendsStmt->execute(['id' => $userId]);
+$myFriends = $friendsStmt->fetchAll();
+
+$discoverStmt = $pdo->prepare(
+    "SELECT u.id, u.name,
+            (SELECT COUNT(*) FROM games g WHERE g.creator_id = u.id) AS created_count,
+            (SELECT COUNT(*) FROM game_progress gp WHERE gp.user_id = u.id AND gp.completed = 1) AS played_count
+     FROM users u
+     WHERE u.id != :id
+       AND u.id NOT IN (SELECT friend_id FROM friendships WHERE user_id = :id2)
+     ORDER BY u.created_at DESC"
+);
+$discoverStmt->execute(['id' => $userId, 'id2' => $userId]);
+$discoverUsers = $discoverStmt->fetchAll();
+
+$userStats = [
+    'points' => $points,
+    'completed' => $completedCount,
+    'created' => count($createdGames),
+    'friends' => count($myFriends),
 ];
 ?>
 <!DOCTYPE html>
@@ -304,6 +346,53 @@ $friends = [
             color: #666;
         }
 
+        .section-title {
+            font-size: 18px;
+            color: #333;
+            margin-bottom: 15px;
+            margin-top: 10px;
+        }
+
+        .friends-section {
+            margin-bottom: 30px;
+        }
+
+        .btn-add-friend {
+            background: #8B4513;
+            color: white;
+            border: none;
+            padding: 8px 14px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-add-friend:hover {
+            background: #6b3410;
+        }
+
+        .btn-remove-friend {
+            background: none;
+            border: none;
+            color: #c94040;
+            cursor: pointer;
+            font-size: 18px;
+            padding: 6px;
+        }
+
+        .friend-form {
+            margin: 0;
+        }
+
+        .game-card-link {
+            text-decoration: none;
+            color: inherit;
+            display: flex;
+        }
+
         /* Empty State */
         .empty-state {
             text-align: center;
@@ -393,9 +482,9 @@ $friends = [
         <!-- Profile Header -->
         <div class="profile-header">
             <div class="profile-main">
-                <div class="profile-avatar">You</div>
+                <div class="profile-avatar"><?php echo $isAnonymous ? '🦊' : htmlspecialchars(mb_strtoupper(mb_substr($userName, 0, 1))); ?></div>
                 <div class="profile-info">
-                    <h2>Your Profile</h2>
+                    <h2><?php echo htmlspecialchars($userName); ?></h2>
                     <div class="profile-stats">
                         <div class="stat-item">
                             <i class="fas fa-trophy stat-icon"></i>
@@ -418,40 +507,132 @@ $friends = [
             </div>
         </div>
 
+        <!-- Sub-tab switcher -->
+        <div class="nav-tabs" style="border-radius: 10px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+            <button class="nav-tab profile-subtab-btn active" data-tab="friendsTab" onclick="switchTab('friendsTab')">
+                <i class="fas fa-user-friends"></i> Přátelé
+            </button>
+            <button class="nav-tab profile-subtab-btn" data-tab="createdTab" onclick="switchTab('createdTab')">
+                <i class="fas fa-map-marked-alt"></i> Vytvořené hry
+            </button>
+            <button class="nav-tab profile-subtab-btn" data-tab="playedTab" onclick="switchTab('playedTab')">
+                <i class="fas fa-trophy"></i> Odehrané hry
+            </button>
+        </div>
+
         <!-- Tabs Content -->
         <div class="tab-content active" id="friendsTab">
-            <div class="friends-list">
-                <?php foreach ($friends as $friend): ?>
-                <div class="friend-card">
-                    <div class="friend-avatar">
-                        <?php echo $friend['initial']; ?>
-                        <div class="<?php echo $friend['online'] ? 'online-indicator' : 'online-indicator offline-indicator'; ?>"></div>
-                    </div>
-                    <div class="friend-info">
-                        <div class="friend-name"><?php echo htmlspecialchars($friend['name']); ?></div>
-                        <div class="friend-stats">
-                            <?php echo $friend['created']; ?> created • <?php echo $friend['played']; ?> played
-                        </div>
-                    </div>
+            <div class="friends-section">
+                <h3 class="section-title">Moji přátelé</h3>
+                <?php if (empty($myFriends)): ?>
+                <div class="empty-state">
+                    <i class="fas fa-user-friends"></i>
+                    <h3>Zatím nemáte žádné přátele</h3>
+                    <p>Přidejte si někoho ze seznamu uživatelů níže</p>
                 </div>
-                <?php endforeach; ?>
+                <?php else: ?>
+                <div class="friends-list">
+                    <?php foreach ($myFriends as $friend): ?>
+                    <div class="friend-card">
+                        <div class="friend-avatar"><?php echo htmlspecialchars(mb_strtoupper(mb_substr($friend['name'], 0, 1))); ?></div>
+                        <div class="friend-info">
+                            <div class="friend-name"><?php echo htmlspecialchars($friend['name']); ?></div>
+                            <div class="friend-stats">
+                                <?php echo (int)$friend['created_count']; ?> vytvořeno • <?php echo (int)$friend['played_count']; ?> odehráno
+                            </div>
+                        </div>
+                        <form method="POST" action="friends.php" class="friend-form">
+                            <input type="hidden" name="action" value="remove">
+                            <input type="hidden" name="user_id" value="<?php echo htmlspecialchars($friend['id']); ?>">
+                            <button type="submit" class="btn-remove-friend" title="Odebrat z přátel">
+                                <i class="fas fa-user-minus"></i>
+                            </button>
+                        </form>
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+                <?php endif; ?>
+            </div>
+
+            <div class="friends-section">
+                <h3 class="section-title">Objevit další uživatele</h3>
+                <?php if (empty($discoverUsers)): ?>
+                <div class="empty-state">
+                    <i class="fas fa-users"></i>
+                    <h3>Žádní další uživatelé k objevení</h3>
+                </div>
+                <?php else: ?>
+                <div class="friends-list">
+                    <?php foreach ($discoverUsers as $user): ?>
+                    <div class="friend-card" style="cursor: default;">
+                        <div class="friend-avatar"><?php echo htmlspecialchars(mb_strtoupper(mb_substr($user['name'], 0, 1))); ?></div>
+                        <div class="friend-info">
+                            <div class="friend-name"><?php echo htmlspecialchars($user['name']); ?></div>
+                            <div class="friend-stats">
+                                <?php echo (int)$user['created_count']; ?> vytvořeno • <?php echo (int)$user['played_count']; ?> odehráno
+                            </div>
+                        </div>
+                        <form method="POST" action="friends.php" class="friend-form">
+                            <input type="hidden" name="action" value="add">
+                            <input type="hidden" name="user_id" value="<?php echo htmlspecialchars($user['id']); ?>">
+                            <button type="submit" class="btn-add-friend">
+                                <i class="fas fa-user-plus"></i> Přidat
+                            </button>
+                        </form>
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+                <?php endif; ?>
             </div>
         </div>
 
         <div class="tab-content" id="createdTab">
+            <?php if (empty($createdGames)): ?>
             <div class="empty-state">
                 <i class="fas fa-map-marked-alt"></i>
                 <h3>Zatím jste nevytvořili žádné hry</h3>
                 <p>Klikněte na "Vytvořit" a začněte tvořit vlastní dobrodružství!</p>
             </div>
+            <?php else: ?>
+            <div class="friends-list">
+                <?php foreach ($createdGames as $game): ?>
+                <a href="qr_share.php?id=<?php echo urlencode($game['id']); ?>" class="friend-card game-card-link">
+                    <div class="friend-avatar"><i class="fas fa-map"></i></div>
+                    <div class="friend-info">
+                        <div class="friend-name"><?php echo htmlspecialchars($game['title']); ?></div>
+                        <div class="friend-stats">
+                            <?php echo (int)$game['waypoint_count']; ?> úkolů • <?php echo (int)$game['play_count']; ?> odehráno
+                        </div>
+                    </div>
+                </a>
+                <?php endforeach; ?>
+            </div>
+            <?php endif; ?>
         </div>
 
         <div class="tab-content" id="playedTab">
+            <?php if (empty($playedGames)): ?>
             <div class="empty-state">
                 <i class="fas fa-trophy"></i>
                 <h3>Historie her</h3>
                 <p>Zde se zobrazí hry, které jste dokončili</p>
             </div>
+            <?php else: ?>
+            <div class="friends-list">
+                <?php foreach ($playedGames as $pg): ?>
+                <a href="play.php?id=<?php echo urlencode($pg['id']); ?>" class="friend-card game-card-link">
+                    <div class="friend-avatar"><i class="fas <?php echo $pg['completed'] ? 'fa-check-circle' : 'fa-play-circle'; ?>"></i></div>
+                    <div class="friend-info">
+                        <div class="friend-name"><?php echo htmlspecialchars($pg['title']); ?></div>
+                        <div class="friend-stats">
+                            <?php echo (int)$pg['waypoints_completed']; ?>/<?php echo (int)$pg['waypoint_count']; ?> úkolů
+                            <?php echo $pg['completed'] ? ' • dokončeno' : ' • rozehráno'; ?>
+                        </div>
+                    </div>
+                </a>
+                <?php endforeach; ?>
+            </div>
+            <?php endif; ?>
         </div>
     </div>
 
@@ -462,6 +643,11 @@ $friends = [
                 tab.classList.remove('active');
             });
             document.getElementById(tabName).classList.add('active');
+
+            document.querySelectorAll('.profile-subtab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector(`.profile-subtab-btn[data-tab="${tabName}"]`).classList.add('active');
         }
     </script>
 </body>

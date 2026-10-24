@@ -647,8 +647,13 @@ function initEventListeners() {
         if (event.target === helpModal) {
             toggleHelp();
         }
+
+        const exitModal = document.getElementById('exitModal');
+        if (event.target === exitModal) {
+            closeExitModal();
+        }
     });
-    
+
     // ESC pro zavření modálů
     document.addEventListener('keydown', function(event) {
         if (event.key === 'Escape') {
@@ -656,15 +661,22 @@ function initEventListeners() {
             if (helpModal.classList.contains('active')) {
                 toggleHelp();
             }
+
+            const exitModal = document.getElementById('exitModal');
+            if (exitModal.classList.contains('active')) {
+                closeExitModal();
+            }
         }
     });
 }
 
 // ==================== UTILITY ====================
 function confirmExit() {
-    if (confirm('Opravdu chceš ukončit hru? Postup nebude uložen.')) {
-        window.location.href = 'dashboard.php';
-    }
+    document.getElementById('exitModal').classList.add('active');
+}
+
+function closeExitModal() {
+    document.getElementById('exitModal').classList.remove('active');
 }
 
 function showNotification(message) {
