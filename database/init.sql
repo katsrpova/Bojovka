@@ -34,16 +34,29 @@ CREATE TABLE waypoints (
     FOREIGN KEY (game_id) REFERENCES games(id) ON DELETE CASCADE
 );
 
+CREATE TABLE game_sessions (
+    code VARCHAR(10) PRIMARY KEY,
+    game_id VARCHAR(100) NOT NULL,
+    host_id VARCHAR(100) NOT NULL,
+    status VARCHAR(20) DEFAULT 'active',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    expires_at TIMESTAMP NOT NULL,
+    FOREIGN KEY (game_id) REFERENCES games(id) ON DELETE CASCADE,
+    FOREIGN KEY (host_id) REFERENCES users(id)
+);
+
 CREATE TABLE game_progress (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id VARCHAR(100),
     game_id VARCHAR(100),
+    session_code VARCHAR(10) NULL,
     waypoints_completed INT DEFAULT 0,
     completed TINYINT(1) DEFAULT 0,
     started_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     completed_at TIMESTAMP NULL,
     FOREIGN KEY (user_id) REFERENCES users(id),
-    FOREIGN KEY (game_id) REFERENCES games(id)
+    FOREIGN KEY (game_id) REFERENCES games(id),
+    FOREIGN KEY (session_code) REFERENCES game_sessions(code)
 );
 
 CREATE TABLE friendships (

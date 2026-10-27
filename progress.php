@@ -23,6 +23,7 @@ require_once 'config.php';
 $userId = $_SESSION['user_id'];
 $gameId = trim($_POST['game_id'] ?? '');
 $waypointIndex = intval($_POST['waypoint_index'] ?? -1);
+$sessionCode = strtoupper(trim($_POST['session'] ?? ''));
 
 if (!$gameId || $waypointIndex < 0) {
     http_response_code(400);
@@ -42,8 +43,15 @@ if ($total === 0) {
     exit;
 }
 
-$progStmt = $pdo->prepare("SELECT * FROM game_progress WHERE user_id = :uid AND game_id = :gid");
-$progStmt->execute(['uid' => $userId, 'gid' => $gameId]);
+// Postup se páruje buď na konkrétní skupinovou session, nebo (sólo hraní) na NULL.
+$sessionClause = $sessionCode ? 'session_code = :code' : 'session_code IS NULL';
+$params = ['uid' => $userId, 'gid' => $gameId];
+if ($sessionCode) {
+    $params['code'] = $sessionCode;
+}
+
+$progStmt = $pdo->prepare("SELECT * FROM game_progress WHERE user_id = :uid AND game_id = :gid AND $sessionClause");
+$progStmt->execute($params);
 $progress = $progStmt->fetch();
 
 $wasCompleted = $progress && (bool)$progress['completed'];
@@ -51,23 +59,21 @@ $newCount = $waypointIndex + 1;
 
 if (!$progress) {
     $pdo->prepare(
-        "INSERT INTO game_progress (user_id, game_id, waypoints_completed, completed)
-         VALUES (:uid, :gid, :count, 0)"
-    )->execute(['uid' => $userId, 'gid' => $gameId, 'count' => $newCount]);
+        "INSERT INTO game_progress (user_id, game_id, session_code, waypoints_completed, completed)
+         VALUES (:uid, :gid, :code, :count, 0)"
+    )->execute(['uid' => $userId, 'gid' => $gameId, 'code' => $sessionCode ?: null, 'count' => $newCount]);
 } else {
     $newCount = max($newCount, (int)$progress['waypoints_completed']);
-    $pdo->prepare(
-        "UPDATE game_progress SET waypoints_completed = :count WHERE user_id = :uid AND game_id = :gid"
-    )->execute(['count' => $newCount, 'uid' => $userId, 'gid' => $gameId]);
+    $pdo->prepare("UPDATE game_progress SET waypoints_completed = :count WHERE user_id = :uid AND game_id = :gid AND $sessionClause")
+        ->execute(array_merge($params, ['count' => $newCount]));
 }
 
 $nowCompleted = $newCount >= $total;
 $pointsAwarded = 0;
 
 if ($nowCompleted && !$wasCompleted) {
-    $pdo->prepare(
-        "UPDATE game_progress SET completed = 1, completed_at = NOW() WHERE user_id = :uid AND game_id = :gid"
-    )->execute(['uid' => $userId, 'gid' => $gameId]);
+    $pdo->prepare("UPDATE game_progress SET completed = 1, completed_at = NOW() WHERE user_id = :uid AND game_id = :gid AND $sessionClause")
+        ->execute($params);
 
     $diffStmt = $pdo->prepare("SELECT difficulty FROM games WHERE id = :id");
     $diffStmt->execute(['id' => $gameId]);

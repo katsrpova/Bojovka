@@ -335,6 +335,31 @@ body {
     box-shadow: 0 4px 12px rgba(139, 69, 19, 0.3);
 }
 
+.card-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-group-play {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    border: 2px solid #8B4513;
+    color: #8B4513;
+    background: white;
+    text-decoration: none;
+    transition: all 0.3s;
+}
+
+.btn-group-play:hover {
+    background: #8B4513;
+    color: white;
+}
+
 /* ==================== MODAL ==================== */
 .modal {
     display: none;

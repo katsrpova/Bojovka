@@ -10,6 +10,7 @@ let currentTaskIndex = Math.min(completedTasks, GAME_DATA.waypoints.length - 1);
 let startTime = Date.now();
 let watchId = null;
 let userPosition = null;
+let leaderboardInterval = null;
 
 // Konstanta pro vzdálenost odemknutí úkolu (v metrech)
 const UNLOCK_DISTANCE = 50;
@@ -507,11 +508,59 @@ function showTaskList() {
 
 // ==================== UKLÁDÁNÍ POSTUPU ====================
 function saveProgress(waypointIndex) {
+    const sessionParam = SESSION_CODE ? `&session=${encodeURIComponent(SESSION_CODE)}` : '';
     fetch('progress.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: `game_id=${encodeURIComponent(GAME_DATA.id)}&waypoint_index=${waypointIndex}`
+        body: `game_id=${encodeURIComponent(GAME_DATA.id)}&waypoint_index=${waypointIndex}${sessionParam}`
     }).catch(err => console.error('Nepodařilo se uložit postup:', err));
+}
+
+// ==================== ŽEBŘÍČEK (SKUPINOVÁ HRA) ====================
+function toggleLeaderboard() {
+    const modal = document.getElementById('leaderboardModal');
+    modal.classList.toggle('active');
+
+    if (modal.classList.contains('active')) {
+        loadLeaderboard();
+        if (!leaderboardInterval) {
+            leaderboardInterval = setInterval(loadLeaderboard, 10000);
+        }
+    } else if (leaderboardInterval) {
+        clearInterval(leaderboardInterval);
+        leaderboardInterval = null;
+    }
+}
+
+async function loadLeaderboard() {
+    const body = document.getElementById('leaderboardBody');
+    try {
+        const res = await fetch(`leaderboard.php?session=${encodeURIComponent(SESSION_CODE)}`);
+        const data = await res.json();
+
+        if (!data.success || data.players.length === 0) {
+            body.innerHTML = '<p>Zatím se nikdo nepřipojil.</p>';
+            return;
+        }
+
+        body.innerHTML = data.players.map((p, i) => `
+            <div class="leaderboard-row ${p.name === USER_NAME ? 'leaderboard-me' : ''}">
+                <span class="leaderboard-rank">${i + 1}.</span>
+                <span class="leaderboard-name">${escapeHtml(p.name)}</span>
+                <span class="leaderboard-progress">
+                    ${p.completed ? '<i class="fas fa-trophy"></i> Dokončeno' : `${p.progress}/${p.total} úkolů`}
+                </span>
+            </div>
+        `).join('');
+    } catch (err) {
+        body.innerHTML = '<p>Žebříček se nepodařilo načíst.</p>';
+    }
+}
+
+function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
 }
 
 // ==================== ODPOVĚDI NA ÚKOLY ====================
@@ -652,6 +701,11 @@ function initEventListeners() {
         if (event.target === exitModal) {
             closeExitModal();
         }
+
+        const leaderboardModal = document.getElementById('leaderboardModal');
+        if (leaderboardModal && event.target === leaderboardModal) {
+            toggleLeaderboard();
+        }
     });
 
     // ESC pro zavření modálů
@@ -665,6 +719,11 @@ function initEventListeners() {
             const exitModal = document.getElementById('exitModal');
             if (exitModal.classList.contains('active')) {
                 closeExitModal();
+            }
+
+            const leaderboardModal = document.getElementById('leaderboardModal');
+            if (leaderboardModal && leaderboardModal.classList.contains('active')) {
+                toggleLeaderboard();
             }
         }
     });

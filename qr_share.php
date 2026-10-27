@@ -380,6 +380,12 @@ $playUrl = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : '
                 </button>
             </div>
 
+            <div class="code-actions">
+                <button class="btn btn-primary" onclick="playNow()" id="playBtn" disabled>
+                    <i class="fas fa-play"></i> Hrát (se žebříčkem)
+                </button>
+            </div>
+
             <!-- DIVIDER -->
             <div class="divider">nebo sdílej QR</div>
 
@@ -453,9 +459,14 @@ function renderCode(data) {
 }
 
 function enableButtons() {
-    ['copyBtn','regenBtn','releaseBtn','dlBtn'].forEach(id => {
+    ['copyBtn','regenBtn','releaseBtn','dlBtn','playBtn'].forEach(id => {
         document.getElementById(id).disabled = false;
     });
+}
+
+function playNow() {
+    if (!currentCode) return;
+    window.location.href = `play.php?id=${encodeURIComponent(GAME_ID)}&session=${encodeURIComponent(currentCode)}`;
 }
 
 // ── QR CODE ───────────────────────────────────────────────────────
@@ -537,7 +548,7 @@ async function generateNewCode() {
     currentCode = null;
     document.getElementById('bigCode').innerHTML = '<span class="spinner"></span>';
     document.getElementById('qrcode').innerHTML  = '';
-    ['copyBtn','regenBtn','releaseBtn','dlBtn'].forEach(id => {
+    ['copyBtn','regenBtn','releaseBtn','dlBtn','playBtn'].forEach(id => {
         document.getElementById(id).disabled = true;
     });
 

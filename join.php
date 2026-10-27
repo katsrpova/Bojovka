@@ -1,7 +1,7 @@
 <?php
 /**
  * join.php
- * Přijme kód (z QR nebo zadání), ověří ho a přesměruje na hru.
+ * Přijme kód (z QR nebo zadání), ověří ho přímo v DB a přesměruje do dané skupinové hry.
  */
 session_start();
 
@@ -12,6 +12,8 @@ if (!isset($_SESSION['user_id'])) {
     exit;
 }
 
+require_once 'config.php';
+
 $code = strtoupper(trim($_GET['code'] ?? ''));
 
 if (!$code || strlen($code) !== 6) {
@@ -19,33 +21,27 @@ if (!$code || strlen($code) !== 6) {
     exit;
 }
 
-// Ulož si session ID, pak zámek nad session souborem uvolni - jinak by interní
-// HTTP volání na game_code.php (které si session zamyká znovu) uvázlo v deadlocku.
-$sessionId = session_id();
-session_write_close();
+$stmt = getDB()->prepare(
+    "SELECT game_id, status, expires_at FROM game_sessions WHERE code = :code"
+);
+$stmt->execute(['code' => $code]);
+$session = $stmt->fetch();
 
-// Ověř kód přes API endpoint
-$baseUrl = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http')
-    . '://' . $_SERVER['HTTP_HOST'] . dirname($_SERVER['SCRIPT_NAME']);
-
-$ch = curl_init();
-curl_setopt_array($ch, [
-    CURLOPT_URL            => $baseUrl . '/game_code.php?action=validate&code=' . urlencode($code),
-    CURLOPT_RETURNTRANSFER => true,
-    CURLOPT_COOKIE         => 'PHPSESSID=' . $sessionId,
-]);
-$response = curl_exec($ch);
-curl_close($ch);
-
-$data = json_decode($response, true);
-
-if (!$data || !$data['valid']) {
-    $err = urlencode($data['error'] ?? 'Neplatný kód');
-    header("Location: dashboard.php?error=$err");
+if (!$session) {
+    header('Location: dashboard.php?error=' . urlencode('Kód neexistuje'));
     exit;
 }
 
-// Přesměruj na hru
-header('Location: play.php?id=' . urlencode($data['game_id']));
+if ($session['status'] !== 'active') {
+    header('Location: dashboard.php?error=' . urlencode('Tento kód již není aktivní'));
+    exit;
+}
+
+if (strtotime($session['expires_at']) < time()) {
+    header('Location: dashboard.php?error=' . urlencode('Platnost kódu vypršela'));
+    exit;
+}
+
+// Přesměruj na hru v rámci téhle skupinové session
+header('Location: play.php?id=' . urlencode($session['game_id']) . '&session=' . urlencode($code));
 exit;
-?>

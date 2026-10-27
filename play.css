@@ -177,6 +177,47 @@ body {
     transform: scale(1.1);
 }
 
+.btn-leaderboard {
+    bottom: 90px;
+}
+
+/* Leaderboard */
+.leaderboard-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    border-radius: 10px;
+    margin-bottom: 8px;
+    background: #f9f9f9;
+}
+
+.leaderboard-row.leaderboard-me {
+    background: #FFF4E6;
+    border: 2px solid #f7931e;
+}
+
+.leaderboard-rank {
+    font-weight: 700;
+    color: #8B4513;
+    width: 24px;
+}
+
+.leaderboard-name {
+    flex: 1;
+    font-weight: 600;
+    color: #333;
+}
+
+.leaderboard-progress {
+    font-size: 13px;
+    color: #666;
+}
+
+.leaderboard-progress i {
+    color: #f7931e;
+}
+
 /* Custom marker styles */
 .custom-marker {
     background: none;

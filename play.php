@@ -45,11 +45,51 @@ if (empty($waypoints)) {
     exit;
 }
 
-$progStmt = $pdo->prepare(
-    "SELECT waypoints_completed FROM game_progress WHERE user_id = :uid AND game_id = :gid"
-);
-$progStmt->execute(['uid' => $_SESSION['user_id'], 'gid' => $gameId]);
-$completedCount = (int)($progStmt->fetchColumn() ?: 0);
+// Skupinová hra? Ověř, že kód patří k téhle hře a je aktivní.
+$sessionCode = strtoupper(trim($_GET['session'] ?? ''));
+if ($sessionCode) {
+    $sessStmt = $pdo->prepare(
+        "SELECT game_id, status, expires_at FROM game_sessions WHERE code = :code"
+    );
+    $sessStmt->execute(['code' => $sessionCode]);
+    $sessionRow = $sessStmt->fetch();
+
+    $sessionValid = $sessionRow
+        && $sessionRow['game_id'] === $gameId
+        && $sessionRow['status'] === 'active'
+        && strtotime($sessionRow['expires_at']) >= time();
+
+    if (!$sessionValid) {
+        $sessionCode = '';
+    }
+}
+
+$userId = $_SESSION['user_id'];
+
+if ($sessionCode) {
+    $progStmt = $pdo->prepare(
+        "SELECT waypoints_completed FROM game_progress WHERE user_id = :uid AND game_id = :gid AND session_code = :code"
+    );
+    $progStmt->execute(['uid' => $userId, 'gid' => $gameId, 'code' => $sessionCode]);
+    $completedCount = $progStmt->fetchColumn();
+
+    if ($completedCount === false) {
+        // První vstup do téhle skupinové hry - založ prázdný postup, ať se hned objeví v žebříčku.
+        $pdo->prepare(
+            "INSERT INTO game_progress (user_id, game_id, session_code, waypoints_completed)
+             VALUES (:uid, :gid, :code, 0)"
+        )->execute(['uid' => $userId, 'gid' => $gameId, 'code' => $sessionCode]);
+        $completedCount = 0;
+    }
+} else {
+    $progStmt = $pdo->prepare(
+        "SELECT waypoints_completed FROM game_progress WHERE user_id = :uid AND game_id = :gid AND session_code IS NULL"
+    );
+    $progStmt->execute(['uid' => $userId, 'gid' => $gameId]);
+    $completedCount = (int)($progStmt->fetchColumn() ?: 0);
+}
+
+$completedCount = (int)$completedCount;
 
 foreach ($waypoints as $index => &$wp) {
     $wp['lat'] = (float)$wp['lat'];
@@ -121,6 +161,13 @@ $gameJson = json_encode($game, JSON_UNESCAPED_UNICODE);
         <i class="fas fa-question-circle"></i>
     </button>
 
+    <?php if ($sessionCode): ?>
+    <!-- Leaderboard Button (Bottom Right, above Help) -->
+    <button class="btn-help btn-leaderboard" id="btnLeaderboard" onclick="toggleLeaderboard()">
+        <i class="fas fa-ranking-star"></i>
+    </button>
+    <?php endif; ?>
+
     <!-- Bottom Task Panel -->
     <div class="task-panel hidden" id="taskPanel">
         <div class="panel-content">
@@ -150,6 +197,23 @@ $gameJson = json_encode($game, JSON_UNESCAPED_UNICODE);
             </div>
         </div>
     </div>
+
+    <?php if ($sessionCode): ?>
+    <!-- Leaderboard Modal -->
+    <div class="modal" id="leaderboardModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-ranking-star"></i> Žebříček</h3>
+                <button class="btn-close" onclick="toggleLeaderboard()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body" id="leaderboardBody">
+                <p>Načítám...</p>
+            </div>
+        </div>
+    </div>
+    <?php endif; ?>
 
     <!-- Help Modal -->
     <div class="modal" id="helpModal">
@@ -231,6 +295,7 @@ $gameJson = json_encode($game, JSON_UNESCAPED_UNICODE);
         const GAME_DATA = <?php echo $gameJson; ?>;
         const API_KEY = '<?php echo $apiKey; ?>';
         const USER_NAME = '<?php echo htmlspecialchars($userName); ?>';
+        const SESSION_CODE = <?php echo json_encode($sessionCode ?: null); ?>;
     </script>
 
     <!-- Leaflet JS -->

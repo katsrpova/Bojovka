@@ -1,16 +1,14 @@
 <?php
 /**
  * game_code.php
- * Správa herních kódů - generování, ověření, uvolnění
- * 
+ * Správa herních kódů pro skupinové hraní - generování, ověření, uvolnění.
  * Kódy jsou 6 znaků, alfanumerické (A-Z, 0-9), bez matoucích znaků (0,O,I,1,L)
- * Kódy se ukládají do souboru codes.json (v produkci použít databázi)
+ * a odpovídají řádku v tabulce game_sessions.
  */
 
 session_start();
 header('Content-Type: application/json');
 
-// Pouze přihlášení uživatelé
 if (!isset($_SESSION['user_id'])) {
     http_response_code(401);
     echo json_encode(['error' => 'Unauthorized']);
@@ -19,33 +17,8 @@ if (!isset($_SESSION['user_id'])) {
 
 require_once 'config.php';
 
-// Soubor pro uložení kódů (v produkci nahradit DB)
-$CODES_FILE = __DIR__ . '/data/game_codes.json';
-
-// Ujisti se, že složka existuje
-if (!is_dir(__DIR__ . '/data')) {
-    mkdir(__DIR__ . '/data', 0755, true);
-}
-
 /**
- * Načte všechny kódy ze souboru
- */
-function loadCodes(string $file): array {
-    if (!file_exists($file)) return [];
-    $raw = file_get_contents($file);
-    $data = json_decode($raw, true);
-    return is_array($data) ? $data : [];
-}
-
-/**
- * Uloží kódy do souboru
- */
-function saveCodes(string $file, array $codes): void {
-    file_put_contents($file, json_encode($codes, JSON_PRETTY_PRINT));
-}
-
-/**
- * Vygeneruje unikátní 6-znakový alfanumerický kód
+ * Vygeneruje unikátní 6-znakový alfanumerický kód.
  * Vynechány matoucí znaky: 0, O, I, 1, L
  */
 function generateCode(): string {
@@ -57,20 +30,7 @@ function generateCode(): string {
     return $code;
 }
 
-/**
- * Vyčistí expirované kódy (starší než 24 hodin)
- */
-function cleanExpiredCodes(array &$codes): void {
-    $now = time();
-    foreach ($codes as $code => $data) {
-        // Kód expiruje po 24 hodinách od vytvoření nebo po uvolnění
-        if (isset($data['expires_at']) && $data['expires_at'] < $now) {
-            unset($codes[$code]);
-        }
-    }
-}
-
-// ==================== ROUTER ====================
+$pdo = getDB();
 $action = $_GET['action'] ?? $_POST['action'] ?? '';
 
 switch ($action) {
@@ -83,37 +43,40 @@ switch ($action) {
             exit;
         }
 
-        $gameId   = trim($_POST['game_id'] ?? '');
-        $gameTitle = trim($_POST['game_title'] ?? '');
+        $gameId = trim($_POST['game_id'] ?? '');
 
-        if (!$gameId || !$gameTitle) {
+        if (!$gameId) {
             http_response_code(400);
-            echo json_encode(['error' => 'game_id a game_title jsou povinné']);
+            echo json_encode(['error' => 'game_id je povinné']);
             exit;
         }
 
-        $codes = loadCodes($CODES_FILE);
-        cleanExpiredCodes($codes);
+        // Existuje už aktivní session, kterou založil tenhle uživatel pro tuhle hru?
+        $existingStmt = $pdo->prepare(
+            "SELECT code, expires_at FROM game_sessions
+             WHERE game_id = :gid AND host_id = :uid AND status = 'active' AND expires_at > NOW()
+             ORDER BY created_at DESC LIMIT 1"
+        );
+        $existingStmt->execute(['gid' => $gameId, 'uid' => $_SESSION['user_id']]);
+        $existing = $existingStmt->fetch();
 
-        // Zkontroluj, zda hra již nemá aktivní kód
-        foreach ($codes as $existingCode => $data) {
-            if ($data['game_id'] === $gameId && $data['status'] === 'active') {
-                // Vrať existující kód
-                echo json_encode([
-                    'success' => true,
-                    'code'    => $existingCode,
-                    'reused'  => true,
-                    'expires_at' => $data['expires_at'],
-                ]);
-                exit;
-            }
+        if ($existing) {
+            echo json_encode([
+                'success'    => true,
+                'code'       => $existing['code'],
+                'reused'     => true,
+                'expires_at' => strtotime($existing['expires_at']),
+            ]);
+            exit;
         }
 
         // Vygeneruj nový unikátní kód (max 20 pokusů)
         $newCode = '';
+        $checkStmt = $pdo->prepare("SELECT 1 FROM game_sessions WHERE code = :code AND status = 'active' AND expires_at > NOW()");
         for ($attempt = 0; $attempt < 20; $attempt++) {
             $candidate = generateCode();
-            if (!isset($codes[$candidate]) || $codes[$candidate]['status'] !== 'active') {
+            $checkStmt->execute(['code' => $candidate]);
+            if (!$checkStmt->fetch()) {
                 $newCode = $candidate;
                 break;
             }
@@ -125,25 +88,23 @@ switch ($action) {
             exit;
         }
 
-        $expiresAt = time() + (24 * 3600); // 24 hodin
+        $expiresAt = date('Y-m-d H:i:s', time() + (24 * 3600)); // 24 hodin
 
-        $codes[$newCode] = [
-            'game_id'    => $gameId,
-            'game_title' => $gameTitle,
-            'creator_id' => $_SESSION['user_id'],
-            'status'     => 'active',   // active | released
-            'created_at' => time(),
+        $pdo->prepare(
+            "INSERT INTO game_sessions (code, game_id, host_id, status, expires_at)
+             VALUES (:code, :gid, :uid, 'active', :expires_at)"
+        )->execute([
+            'code'       => $newCode,
+            'gid'        => $gameId,
+            'uid'        => $_SESSION['user_id'],
             'expires_at' => $expiresAt,
-            'join_count' => 0,
-        ];
-
-        saveCodes($CODES_FILE, $codes);
+        ]);
 
         echo json_encode([
             'success'    => true,
             'code'       => $newCode,
             'reused'     => false,
-            'expires_at' => $expiresAt,
+            'expires_at' => strtotime($expiresAt),
         ]);
         break;
 
@@ -156,40 +117,41 @@ switch ($action) {
             exit;
         }
 
-        $codes = loadCodes($CODES_FILE);
-        cleanExpiredCodes($codes);
+        $stmt = $pdo->prepare(
+            "SELECT gs.game_id, g.title AS game_title, gs.status, gs.expires_at
+             FROM game_sessions gs JOIN games g ON g.id = gs.game_id
+             WHERE gs.code = :code"
+        );
+        $stmt->execute(['code' => $code]);
+        $entry = $stmt->fetch();
 
-        if (!isset($codes[$code])) {
-            echo json_encode(['valid' => false, 'error' => 'Kód neexistuje nebo vypršel']);
+        if (!$entry) {
+            echo json_encode(['valid' => false, 'error' => 'Kód neexistuje']);
             exit;
         }
-
-        $entry = $codes[$code];
 
         if ($entry['status'] !== 'active') {
             echo json_encode(['valid' => false, 'error' => 'Tento kód již není aktivní']);
             exit;
         }
 
-        if ($entry['expires_at'] < time()) {
+        if (strtotime($entry['expires_at']) < time()) {
             echo json_encode(['valid' => false, 'error' => 'Platnost kódu vypršela']);
             exit;
         }
 
-        // Zaznamenej připojení
-        $codes[$code]['join_count']++;
-        $codes[$code]['last_join'] = time();
-        saveCodes($CODES_FILE, $codes);
+        $countStmt = $pdo->prepare("SELECT COUNT(DISTINCT user_id) FROM game_progress WHERE session_code = :code");
+        $countStmt->execute(['code' => $code]);
 
         echo json_encode([
             'valid'      => true,
             'game_id'    => $entry['game_id'],
             'game_title' => $entry['game_title'],
-            'join_count' => $codes[$code]['join_count'],
+            'join_count' => (int)$countStmt->fetchColumn(),
         ]);
         break;
 
-    // ----- UVOLNĚNÍ KÓDU (tvůrce hry ho deaktivuje) -----
+    // ----- UVOLNĚNÍ KÓDU (tvůrce ho deaktivuje) -----
     case 'release':
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             http_response_code(405);
@@ -205,25 +167,23 @@ switch ($action) {
             exit;
         }
 
-        $codes = loadCodes($CODES_FILE);
+        $stmt = $pdo->prepare("SELECT host_id FROM game_sessions WHERE code = :code");
+        $stmt->execute(['code' => $code]);
+        $hostId = $stmt->fetchColumn();
 
-        if (!isset($codes[$code])) {
+        if ($hostId === false) {
             echo json_encode(['success' => false, 'error' => 'Kód nenalezen']);
             exit;
         }
 
-        // Pouze tvůrce může uvolnit kód
-        if ($codes[$code]['creator_id'] !== $_SESSION['user_id']) {
+        if ($hostId !== $_SESSION['user_id']) {
             http_response_code(403);
             echo json_encode(['error' => 'Nemáte oprávnění uvolnit tento kód']);
             exit;
         }
 
-        // Označ jako uvolněný + nastav krátkou expiraci (kód lze znovu použít za chvíli)
-        $codes[$code]['status']     = 'released';
-        $codes[$code]['expires_at'] = time() + 3600; // uvolní se za hodinu
-
-        saveCodes($CODES_FILE, $codes);
+        $pdo->prepare("UPDATE game_sessions SET status = 'released' WHERE code = :code")
+            ->execute(['code' => $code]);
 
         echo json_encode(['success' => true, 'message' => 'Kód byl uvolněn']);
         break;
@@ -238,22 +198,30 @@ switch ($action) {
             exit;
         }
 
-        $codes = loadCodes($CODES_FILE);
+        $stmt = $pdo->prepare(
+            "SELECT gs.game_id, g.title AS game_title, gs.status, gs.expires_at, gs.host_id
+             FROM game_sessions gs JOIN games g ON g.id = gs.game_id
+             WHERE gs.code = :code"
+        );
+        $stmt->execute(['code' => $code]);
+        $entry = $stmt->fetch();
 
-        if (!isset($codes[$code])) {
+        if (!$entry) {
             echo json_encode(['found' => false]);
             exit;
         }
 
-        $entry = $codes[$code];
+        $countStmt = $pdo->prepare("SELECT COUNT(DISTINCT user_id) FROM game_progress WHERE session_code = :code");
+        $countStmt->execute(['code' => $code]);
+
         echo json_encode([
             'found'      => true,
             'status'     => $entry['status'],
             'game_id'    => $entry['game_id'],
             'game_title' => $entry['game_title'],
-            'join_count' => $entry['join_count'],
-            'expires_at' => $entry['expires_at'],
-            'is_mine'    => ($entry['creator_id'] === $_SESSION['user_id']),
+            'join_count' => (int)$countStmt->fetchColumn(),
+            'expires_at' => strtotime($entry['expires_at']),
+            'is_mine'    => ($entry['host_id'] === $_SESSION['user_id']),
         ]);
         break;
 
@@ -262,4 +230,3 @@ switch ($action) {
         echo json_encode(['error' => 'Neznámá akce: ' . htmlspecialchars($action)]);
         break;
 }
-?>

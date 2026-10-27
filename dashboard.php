@@ -127,9 +127,14 @@ $adventures = getDB()->query(
 
                     <div class="card-footer">
                         <span class="author">by <?php echo htmlspecialchars($adventure['creator_name']); ?></span>
-                        <button class="btn-start" onclick='startAdventure(<?php echo json_encode($adventure['id']); ?>)'>
-                            Start Adventure
-                        </button>
+                        <div class="card-actions">
+                            <a href="qr_share.php?id=<?php echo urlencode($adventure['id']); ?>" class="btn-group-play" title="Hrát ve skupině">
+                                <i class="fas fa-users"></i>
+                            </a>
+                            <button class="btn-start" onclick='startAdventure(<?php echo json_encode($adventure['id']); ?>)'>
+                                Start Adventure
+                            </button>
+                        </div>
                     </div>
                 </article>
                 <?php endforeach; ?>
