@@ -1,3 +1,53 @@
+/* ==================== PROMĚNNÉ ==================== */
+:root {
+    /* Značkové barvy */
+    --color-primary: #8B4513;
+    --color-primary-light: #D2691E;
+    --color-primary-gradient: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-light) 100%);
+    --color-accent: #f7931e;
+    --color-accent-bg: #FFF4E6;
+
+    /* Doplňkové barvy */
+    --color-blue: #4285F4;
+    --color-info: #3B82F6;
+    --color-pink: #FF69B4;
+    --color-success: #10B981;
+    --color-danger-alt: #EF4444;
+
+    /* Text */
+    --color-text: #333;
+    --color-text-muted: #666;
+    --color-text-light: #999;
+
+    /* Pozadí */
+    --color-background: #F5F5F0;
+    --color-surface: #ffffff;
+    --color-surface-alt: #f9f9f9;
+    --color-surface-hover: #f5f5f5;
+    --color-surface-hover-dark: #e0e0e0;
+
+    /* Ohraničení */
+    --color-border: #e0e0e0;
+    --color-border-light: #eee;
+
+    /* Mezery */
+    --spacing-xs: 5px;
+    --spacing-sm: 8px;
+    --spacing-md: 15px;
+    --spacing-lg: 20px;
+    --spacing-xl: 30px;
+
+    /* Zaoblení rohů */
+    --radius-sm: 5px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+    --radius-xl: 16px;
+    --radius-round: 50%;
+
+    /* Přechody */
+    --transition-default: all 0.3s;
+}
+
 /* ==================== RESET & BASE ==================== */
 * {
     margin: 0;
@@ -7,7 +57,7 @@
 
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-    background: #F5F5F0;
+    background: var(--color-background);
     overflow: hidden;
     height: 100vh;
 }
@@ -18,7 +68,7 @@ body {
     top: 0;
     left: 0;
     right: 0;
-    background: linear-gradient(135deg, #8B4513 0%, #D2691E 100%);
+    background: var(--color-primary-gradient);
     padding: 12px 15px;
     display: flex;
     justify-content: space-between;
@@ -39,13 +89,13 @@ body {
     border: none;
     width: 40px;
     height: 40px;
-    border-radius: 8px;
+    border-radius: var(--radius-md);
     color: white;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.3s;
+    transition: var(--transition-default);
 }
 
 .btn-back:hover {
@@ -69,7 +119,7 @@ body {
 
 .game-meta {
     display: flex;
-    gap: 15px;
+    gap: var(--spacing-md);
     align-items: center;
 }
 
@@ -90,8 +140,8 @@ body {
 .user-avatar-small {
     width: 40px;
     height: 40px;
-    background: #FF69B4;
-    border-radius: 50%;
+    background: var(--color-pink);
+    border-radius: var(--radius-round);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -111,23 +161,23 @@ body {
 /* ==================== TASKS BUTTON (Bottom Left) ==================== */
 .btn-tasks {
     position: fixed;
-    bottom: 20px;
-    left: 20px;
-    background: linear-gradient(135deg, #8B4513 0%, #D2691E 100%);
+    bottom: var(--spacing-lg);
+    left: var(--spacing-lg);
+    background: var(--color-primary-gradient);
     color: white;
     border: none;
-    padding: 15px 20px;
-    border-radius: 12px;
+    padding: 15px var(--spacing-lg);
+    border-radius: var(--radius-lg);
     font-size: 16px;
     font-weight: 600;
     cursor: pointer;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 8px;
+    gap: var(--spacing-sm);
     box-shadow: 0 4px 12px rgba(139, 69, 19, 0.4);
     z-index: 999;
-    transition: all 0.3s;
+    transition: var(--transition-default);
     min-width: 80px;
 }
 
@@ -147,26 +197,26 @@ body {
 .tasks-badge {
     background: rgba(255, 255, 255, 0.3);
     padding: 4px 10px;
-    border-radius: 12px;
+    border-radius: var(--radius-lg);
     font-size: 12px;
     font-weight: 700;
 }
 
 .btn-help {
     position: fixed;
-    bottom: 20px;
-    right: 20px;
+    bottom: var(--spacing-lg);
+    right: var(--spacing-lg);
     background: rgba(139, 69, 19, 0.9);
     border: none;
     width: 50px;
     height: 50px;
-    border-radius: 50%;
+    border-radius: var(--radius-round);
     color: white;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.3s;
+    transition: var(--transition-default);
     font-size: 20px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
     z-index: 999;
@@ -187,35 +237,35 @@ body {
     align-items: center;
     gap: 12px;
     padding: 12px;
-    border-radius: 10px;
-    margin-bottom: 8px;
-    background: #f9f9f9;
+    border-radius: var(--radius-md);
+    margin-bottom: var(--spacing-sm);
+    background: var(--color-surface-alt);
 }
 
 .leaderboard-row.leaderboard-me {
-    background: #FFF4E6;
-    border: 2px solid #f7931e;
+    background: var(--color-accent-bg);
+    border: 2px solid var(--color-accent);
 }
 
 .leaderboard-rank {
     font-weight: 700;
-    color: #8B4513;
+    color: var(--color-primary);
     width: 24px;
 }
 
 .leaderboard-name {
     flex: 1;
     font-weight: 600;
-    color: #333;
+    color: var(--color-text);
 }
 
 .leaderboard-progress {
     font-size: 13px;
-    color: #666;
+    color: var(--color-text-muted);
 }
 
 .leaderboard-progress i {
-    color: #f7931e;
+    color: var(--color-accent);
 }
 
 /* Custom marker styles */
@@ -236,7 +286,7 @@ body {
 .marker-pin-inner {
     width: 35px;
     height: 35px;
-    background: #f7931e;
+    background: var(--color-accent);
     border-radius: 50% 50% 50% 0;
     transform: rotate(-45deg);
     border: 3px solid white;
@@ -251,7 +301,7 @@ body {
     width: 22px;
     height: 22px;
     background: white;
-    border-radius: 50%;
+    border-radius: var(--radius-round);
     position: absolute;
 }
 
@@ -264,26 +314,26 @@ body {
     justify-content: center;
     font-weight: bold;
     font-size: 13px;
-    color: #f7931e;
+    color: var(--color-accent);
     z-index: 10;
     transform: rotate(45deg);
 }
 
 .marker-completed .marker-pin-inner {
-    background: #10B981;
+    background: var(--color-success);
 }
 
 .marker-completed .marker-number {
-    color: #10B981;
+    color: var(--color-success);
 }
 
 .marker-active .marker-pin-inner {
-    background: #3B82F6;
+    background: var(--color-info);
     animation: pulse 2s infinite;
 }
 
 .marker-active .marker-number {
-    color: #3B82F6;
+    color: var(--color-info);
 }
 
 @keyframes pulse {
@@ -304,9 +354,9 @@ body {
 .user-location-dot {
     width: 20px;
     height: 20px;
-    background: #4285F4;
+    background: var(--color-blue);
     border: 3px solid white;
-    border-radius: 50%;
+    border-radius: var(--radius-round);
     box-shadow: 0 0 10px rgba(66, 133, 244, 0.5);
     animation: user-pulse 2s infinite;
 }
@@ -340,7 +390,7 @@ body {
 }
 
 .panel-content {
-    padding: 20px;
+    padding: var(--spacing-lg);
     overflow-y: auto;
     max-height: calc(70vh - 20px);
 }
@@ -352,8 +402,8 @@ body {
 
 .task-list-view h2 {
     font-size: 20px;
-    color: #333;
-    margin-bottom: 15px;
+    color: var(--color-text);
+    margin-bottom: var(--spacing-md);
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -366,21 +416,21 @@ body {
 }
 
 .btn-close-panel {
-    background: #f5f5f5;
+    background: var(--color-surface-hover);
     border: none;
     width: 32px;
     height: 32px;
-    border-radius: 8px;
-    color: #666;
+    border-radius: var(--radius-md);
+    color: var(--color-text-muted);
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.3s;
+    transition: var(--transition-default);
 }
 
 .btn-close-panel:hover {
-    background: #e0e0e0;
+    background: var(--color-surface-hover-dark);
 }
 
 .tasks-container {
@@ -390,25 +440,25 @@ body {
 }
 
 .task-card {
-    background: #f9f9f9;
-    border: 2px solid #e0e0e0;
-    border-radius: 12px;
-    padding: 15px;
+    background: var(--color-surface-alt);
+    border: 2px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-md);
     cursor: pointer;
-    transition: all 0.3s;
+    transition: var(--transition-default);
     display: flex;
-    gap: 15px;
+    gap: var(--spacing-md);
     align-items: center;
 }
 
 .task-card:hover {
-    border-color: #8B4513;
+    border-color: var(--color-primary);
     box-shadow: 0 2px 8px rgba(139, 69, 19, 0.1);
 }
 
 .task-card.completed {
     background: #F0FDF4;
-    border-color: #10B981;
+    border-color: var(--color-success);
 }
 
 .task-card.locked {
@@ -417,16 +467,16 @@ body {
 }
 
 .task-card.active {
-    border-color: #3B82F6;
+    border-color: var(--color-info);
     background: #EFF6FF;
 }
 
 .task-number-badge {
     width: 45px;
     height: 45px;
-    background: #f7931e;
+    background: var(--color-accent);
     color: white;
-    border-radius: 50%;
+    border-radius: var(--radius-round);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -436,15 +486,15 @@ body {
 }
 
 .task-card.completed .task-number-badge {
-    background: #10B981;
+    background: var(--color-success);
 }
 
 .task-card.active .task-number-badge {
-    background: #3B82F6;
+    background: var(--color-info);
 }
 
 .task-card.locked .task-number-badge {
-    background: #999;
+    background: var(--color-text-light);
 }
 
 .task-card-content {
@@ -455,13 +505,13 @@ body {
 .task-card-title {
     font-size: 16px;
     font-weight: 600;
-    color: #333;
-    margin-bottom: 5px;
+    color: var(--color-text);
+    margin-bottom: var(--spacing-xs);
 }
 
 .task-card-status {
     font-size: 13px;
-    color: #666;
+    color: var(--color-text-muted);
     display: flex;
     align-items: center;
     gap: 6px;
@@ -469,115 +519,115 @@ body {
 
 .task-card-icon {
     font-size: 20px;
-    color: #999;
+    color: var(--color-text-light);
 }
 
 .task-card.completed .task-card-icon {
-    color: #10B981;
+    color: var(--color-success);
 }
 
 .task-card.active .task-card-icon {
-    color: #3B82F6;
+    color: var(--color-info);
 }
 
 /* Task Detail View */
 .btn-back-to-list {
-    background: #f5f5f5;
+    background: var(--color-surface-hover);
     border: none;
-    padding: 10px 15px;
-    border-radius: 8px;
-    color: #666;
+    padding: 10px var(--spacing-md);
+    border-radius: var(--radius-md);
+    color: var(--color-text-muted);
     cursor: pointer;
     display: flex;
     align-items: center;
-    gap: 8px;
-    margin-bottom: 20px;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-lg);
     font-size: 14px;
-    transition: all 0.3s;
+    transition: var(--transition-default);
 }
 
 .btn-back-to-list:hover {
-    background: #e0e0e0;
+    background: var(--color-surface-hover-dark);
 }
 
 .task-detail-header {
-    margin-bottom: 20px;
+    margin-bottom: var(--spacing-lg);
 }
 
 .task-detail-title {
     font-size: 24px;
-    color: #333;
+    color: var(--color-text);
     margin-bottom: 10px;
 }
 
 .task-detail-location {
     display: flex;
     align-items: center;
-    gap: 8px;
-    color: #666;
+    gap: var(--spacing-sm);
+    color: var(--color-text-muted);
     font-size: 14px;
-    margin-bottom: 15px;
+    margin-bottom: var(--spacing-md);
 }
 
 .task-detail-description {
-    background: #FFF4E6;
-    border-left: 4px solid #f7931e;
-    padding: 15px;
-    border-radius: 8px;
-    margin-bottom: 20px;
+    background: var(--color-accent-bg);
+    border-left: 4px solid var(--color-accent);
+    padding: var(--spacing-md);
+    border-radius: var(--radius-md);
+    margin-bottom: var(--spacing-lg);
     line-height: 1.6;
 }
 
 .task-question-section {
     background: white;
-    border: 2px solid #e0e0e0;
-    border-radius: 12px;
-    padding: 20px;
-    margin-bottom: 20px;
+    border: 2px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-lg);
+    margin-bottom: var(--spacing-lg);
 }
 
 .question-label {
     font-size: 16px;
     font-weight: 600;
-    color: #333;
-    margin-bottom: 15px;
+    color: var(--color-text);
+    margin-bottom: var(--spacing-md);
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: var(--spacing-sm);
 }
 
 .answer-input {
     width: 100%;
-    padding: 12px 15px;
-    border: 2px solid #e0e0e0;
-    border-radius: 8px;
+    padding: 12px var(--spacing-md);
+    border: 2px solid var(--color-border);
+    border-radius: var(--radius-md);
     font-size: 15px;
-    margin-bottom: 15px;
-    transition: all 0.3s;
+    margin-bottom: var(--spacing-md);
+    transition: var(--transition-default);
 }
 
 .answer-input:focus {
     outline: none;
-    border-color: #8B4513;
+    border-color: var(--color-primary);
     box-shadow: 0 0 0 3px rgba(139, 69, 19, 0.1);
 }
 
 .btn {
     padding: 12px 24px;
     border: none;
-    border-radius: 8px;
+    border-radius: var(--radius-md);
     font-size: 15px;
     font-weight: 600;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
-    transition: all 0.3s;
+    gap: var(--spacing-sm);
+    transition: var(--transition-default);
 }
 
 .btn-primary {
-    background: linear-gradient(135deg, #8B4513 0%, #D2691E 100%);
+    background: var(--color-primary-gradient);
     color: white;
     width: 100%;
 }
@@ -594,31 +644,31 @@ body {
 }
 
 .btn-secondary {
-    background: #f5f5f5;
-    color: #666;
+    background: var(--color-surface-hover);
+    color: var(--color-text-muted);
 }
 
 .btn-secondary:hover {
-    background: #e0e0e0;
+    background: var(--color-surface-hover-dark);
 }
 
 .task-completed-message {
     background: #F0FDF4;
-    border: 2px solid #10B981;
-    border-radius: 12px;
-    padding: 20px;
+    border: 2px solid var(--color-success);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-lg);
     text-align: center;
 }
 
 .task-completed-message i {
     font-size: 48px;
-    color: #10B981;
+    color: var(--color-success);
     margin-bottom: 10px;
 }
 
 .task-completed-message h3 {
-    color: #333;
-    margin-bottom: 5px;
+    color: var(--color-text);
+    margin-bottom: var(--spacing-xs);
 }
 
 /* ==================== MODALS ==================== */
@@ -641,7 +691,7 @@ body {
 
 .modal-content {
     background: white;
-    border-radius: 16px;
+    border-radius: var(--radius-xl);
     width: 90%;
     max-width: 450px;
     max-height: 80vh;
@@ -650,8 +700,8 @@ body {
 }
 
 .modal-header {
-    padding: 20px 25px;
-    border-bottom: 1px solid #eee;
+    padding: var(--spacing-lg) 25px;
+    border-bottom: 1px solid var(--color-border-light);
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -659,7 +709,7 @@ body {
 
 .modal-header h3 {
     font-size: 20px;
-    color: #333;
+    color: var(--color-text);
     font-weight: 600;
     display: flex;
     align-items: center;
@@ -670,21 +720,21 @@ body {
     background: none;
     border: none;
     font-size: 24px;
-    color: #999;
+    color: var(--color-text-light);
     cursor: pointer;
-    padding: 5px;
+    padding: var(--spacing-xs);
     width: 30px;
     height: 30px;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.3s;
-    border-radius: 5px;
+    transition: var(--transition-default);
+    border-radius: var(--radius-sm);
 }
 
 .btn-close:hover {
-    background: #f5f5f5;
-    color: #333;
+    background: var(--color-surface-hover);
+    color: var(--color-text);
 }
 
 .modal-body {
@@ -695,20 +745,20 @@ body {
 
 /* Help Modal */
 .help-section {
-    margin-bottom: 20px;
+    margin-bottom: var(--spacing-lg);
 }
 
 .help-section h4 {
     font-size: 16px;
-    color: #333;
+    color: var(--color-text);
     margin-bottom: 10px;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: var(--spacing-sm);
 }
 
 .help-section p {
-    color: #666;
+    color: var(--color-text-muted);
     line-height: 1.6;
     font-size: 14px;
 }
@@ -722,9 +772,9 @@ body {
 .success-animation {
     width: 80px;
     height: 80px;
-    margin: 0 auto 20px;
-    background: #10B981;
-    border-radius: 50%;
+    margin: 0 auto var(--spacing-lg);
+    background: var(--color-success);
+    border-radius: var(--radius-round);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -750,27 +800,27 @@ body {
 
 .success-content h3 {
     font-size: 24px;
-    color: #333;
+    color: var(--color-text);
     margin-bottom: 10px;
 }
 
 .success-content p {
-    color: #666;
+    color: var(--color-text-muted);
     margin-bottom: 25px;
 }
 
 /* Completion Modal */
 .completion-content {
     text-align: center;
-    padding: 40px 30px;
+    padding: 40px var(--spacing-xl);
 }
 
 .completion-animation {
     width: 100px;
     height: 100px;
-    margin: 0 auto 20px;
-    background: linear-gradient(135deg, #8B4513 0%, #D2691E 100%);
-    border-radius: 50%;
+    margin: 0 auto var(--spacing-lg);
+    background: var(--color-primary-gradient);
+    border-radius: var(--radius-round);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -799,47 +849,47 @@ body {
 
 .completion-content h2 {
     font-size: 28px;
-    color: #333;
+    color: var(--color-text);
     margin-bottom: 10px;
 }
 
 .completion-content p {
-    color: #666;
+    color: var(--color-text-muted);
     margin-bottom: 25px;
 }
 
 .completion-stats {
     display: flex;
-    gap: 30px;
+    gap: var(--spacing-xl);
     justify-content: center;
-    margin-bottom: 30px;
+    margin-bottom: var(--spacing-xl);
 }
 
 .completion-stats .stat {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 8px;
+    gap: var(--spacing-sm);
 }
 
 .completion-stats .stat i {
     font-size: 32px;
-    color: #f7931e;
+    color: var(--color-accent);
 }
 
 .completion-stats .stat span {
     font-size: 20px;
     font-weight: 600;
-    color: #333;
+    color: var(--color-text);
 }
 
 .completion-actions {
     display: flex;
-    gap: 15px;
+    gap: var(--spacing-md);
 }
 
 #exitModal .modal-body p {
-    margin-bottom: 20px;
+    margin-bottom: var(--spacing-lg);
 }
 
 .completion-actions .btn {
@@ -879,7 +929,7 @@ body {
     }
 
     .completion-stats {
-        gap: 20px;
+        gap: var(--spacing-lg);
     }
 
     .completion-stats .stat i {
