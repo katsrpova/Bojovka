@@ -526,6 +526,105 @@ body {
     border-color: var(--color-primary);
 }
 
+/* Obrázek k zadání */
+.question-image-field {
+    margin-bottom: var(--spacing-sm);
+}
+
+.image-upload-label {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm) 12px;
+    border: 1px dashed var(--color-border-lighter);
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    transition: var(--transition-default);
+}
+
+.image-upload-label:hover {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+}
+
+.image-upload-status {
+    font-size: 12px;
+    color: var(--color-text-muted);
+    margin-left: var(--spacing-sm);
+}
+
+.question-image-preview {
+    position: relative;
+    display: inline-block;
+}
+
+.question-image-preview img {
+    max-width: 160px;
+    max-height: 120px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--color-border-lighter);
+    display: block;
+}
+
+.btn-remove-image {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    width: 24px;
+    height: 24px;
+    border-radius: var(--radius-round);
+    background: var(--color-danger);
+    color: white;
+    border: 2px solid white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+}
+
+/* Typ odpovědi */
+.answer-type-toggle {
+    display: flex;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-sm);
+}
+
+.answer-type-btn {
+    flex: 1;
+    padding: var(--spacing-sm) 10px;
+    border: 1px solid var(--color-border-lighter);
+    border-radius: var(--radius-sm);
+    background: white;
+    color: var(--color-text-muted);
+    font-size: 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: var(--transition-default);
+}
+
+.answer-type-btn.active {
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+    color: white;
+}
+
+.photo-answer-note {
+    font-size: 12px;
+    color: var(--color-accent-dark);
+    background: var(--color-accent-bg);
+    border-radius: var(--radius-sm);
+    padding: var(--spacing-sm);
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+}
+
 .btn-delete {
     width: 35px;
     height: 35px;

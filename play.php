@@ -34,7 +34,7 @@ if (!$game) {
 }
 
 $wpStmt = $pdo->prepare(
-    "SELECT id, name, description, question, answer, lat, lng
+    "SELECT id, name, description, question, question_image, answer, answer_type, lat, lng
      FROM waypoints WHERE game_id = :id ORDER BY order_index ASC"
 );
 $wpStmt->execute(['id' => $gameId]);
@@ -66,6 +66,13 @@ if ($sessionCode) {
 
 $userId = $_SESSION['user_id'];
 
+$isHost = false;
+if ($sessionCode) {
+    $hostStmt = $pdo->prepare("SELECT host_id FROM game_sessions WHERE code = :code");
+    $hostStmt->execute(['code' => $sessionCode]);
+    $isHost = $hostStmt->fetchColumn() === $userId;
+}
+
 if ($sessionCode) {
     $progStmt = $pdo->prepare(
         "SELECT waypoints_completed FROM game_progress WHERE user_id = :uid AND game_id = :gid AND session_code = :code"
@@ -91,14 +98,35 @@ if ($sessionCode) {
 
 $completedCount = (int)$completedCount;
 
+// Nejnovější stav nahraných foto-odpovědí tohoto hráče (pro zobrazení "čeká na schválení").
+$subSessionClause = $sessionCode ? 'session_code = :code' : 'session_code IS NULL';
+$subParams = ['uid' => $userId, 'gid' => $gameId];
+if ($sessionCode) {
+    $subParams['code'] = $sessionCode;
+}
+$subStmt = $pdo->prepare(
+    "SELECT waypoint_id, status FROM waypoint_submissions
+     WHERE user_id = :uid AND game_id = :gid AND $subSessionClause
+     ORDER BY submitted_at DESC"
+);
+$subStmt->execute($subParams);
+$latestStatusByWaypoint = [];
+foreach ($subStmt->fetchAll() as $row) {
+    if (!isset($latestStatusByWaypoint[$row['waypoint_id']])) {
+        $latestStatusByWaypoint[$row['waypoint_id']] = $row['status'];
+    }
+}
+
 foreach ($waypoints as $index => &$wp) {
     $wp['lat'] = (float)$wp['lat'];
     $wp['lng'] = (float)$wp['lng'];
     $wp['completed'] = $index < $completedCount;
+    $wp['pending'] = !$wp['completed'] && (($latestStatusByWaypoint[$wp['id']] ?? null) === 'pending');
 }
 unset($wp);
 
 $game['waypoints'] = $waypoints;
+$game['is_host'] = $isHost;
 
 // Připočítej odehrání hry
 $pdo->prepare("UPDATE games SET play_count = play_count + 1 WHERE id = :id")->execute(['id' => $gameId]);
@@ -168,6 +196,14 @@ $gameJson = json_encode($game, JSON_UNESCAPED_UNICODE);
     </button>
     <?php endif; ?>
 
+    <?php if ($isHost): ?>
+    <!-- Review Submissions Button (Bottom Right, above Leaderboard) - jen pro hostitele -->
+    <button class="btn-help btn-review" id="btnReview" onclick="toggleReview()">
+        <i class="fas fa-images"></i>
+        <span class="review-badge hidden" id="reviewBadge">0</span>
+    </button>
+    <?php endif; ?>
+
     <!-- Bottom Task Panel -->
     <div class="task-panel hidden" id="taskPanel">
         <div class="panel-content">
@@ -209,6 +245,23 @@ $gameJson = json_encode($game, JSON_UNESCAPED_UNICODE);
                 </button>
             </div>
             <div class="modal-body" id="leaderboardBody">
+                <p>Načítám...</p>
+            </div>
+        </div>
+    </div>
+    <?php endif; ?>
+
+    <?php if ($isHost): ?>
+    <!-- Review Submissions Modal (jen pro hostitele) -->
+    <div class="modal" id="reviewModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-images"></i> Čeká na schválení</h3>
+                <button class="btn-close" onclick="toggleReview()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body" id="reviewBody">
                 <p>Načítám...</p>
             </div>
         </div>

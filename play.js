@@ -11,6 +11,9 @@ let startTime = Date.now();
 let watchId = null;
 let userPosition = null;
 let leaderboardInterval = null;
+let reviewInterval = null;
+let reviewBadgeInterval = null;
+let pendingPollInterval = null;
 
 // Konstanta pro vzdálenost odemknutí úkolu (v metrech)
 const UNLOCK_DISTANCE = 50;
@@ -21,6 +24,8 @@ document.addEventListener('DOMContentLoaded', function() {
     initTaskList();
     initEventListeners();
     startLocationTracking();
+    startReviewBadgePolling();
+    startPendingPolling();
 });
 
 // ==================== MAPA ====================
@@ -323,6 +328,10 @@ function renderTaskList() {
             cardClass += ' completed';
             statusText = 'Dokončeno';
             statusIcon = '<i class="fas fa-check-circle task-card-icon"></i>';
+        } else if (waypoint.pending) {
+            cardClass += ' pending';
+            statusText = 'Čeká na schválení';
+            statusIcon = '<i class="fas fa-hourglass-half task-card-icon"></i>';
         } else if (isActive && waypoint.unlocked) {
             cardClass += ' active';
             statusText = 'Dostupný';
@@ -423,9 +432,11 @@ function showTaskList() {
 
 function openTaskDetail(taskIndex) {
     const waypoint = GAME_DATA.waypoints[taskIndex];
-    
+
     if (waypoint.completed) {
         showCompletedTaskDetail(waypoint, taskIndex);
+    } else if (waypoint.pending) {
+        showPendingTaskDetail(waypoint, taskIndex);
     } else if (waypoint.unlocked || taskIndex === 0) {
         showActiveTaskDetail(waypoint, taskIndex);
     } else {
@@ -442,7 +453,37 @@ function openTaskDetail(taskIndex) {
 
 function showActiveTaskDetail(waypoint, taskIndex) {
     const content = document.getElementById('taskDetailContent');
-    
+
+    const imageHtml = waypoint.question_image
+        ? `<img class="question-image" src="${waypoint.question_image}" alt="Obrázek k zadání">`
+        : '';
+
+    const answerHtml = waypoint.answer_type === 'photo'
+        ? `
+            <input type="file" accept="image/*" capture="environment" id="photoAnswerInput" style="display:none" onchange="handlePhotoAnswerSelected(this)">
+            <div id="photoAnswerPreview"></div>
+            <button class="btn btn-secondary" onclick="document.getElementById('photoAnswerInput').click()" id="choosePhotoBtn">
+                <i class="fas fa-camera"></i>
+                Vyfotit / vybrat fotku
+            </button>
+            <button class="btn btn-primary d-none" onclick="submitPhotoAnswer(${taskIndex})" id="submitPhotoBtn">
+                <i class="fas fa-paper-plane"></i>
+                Odeslat jako důkaz
+            </button>
+        `
+        : `
+            <input
+                type="text"
+                class="answer-input"
+                id="answerInput"
+                placeholder="Zadejte odpověď..."
+            >
+            <button class="btn btn-primary" onclick="submitAnswer(${taskIndex})">
+                <i class="fas fa-paper-plane"></i>
+                Odeslat odpověď
+            </button>
+        `;
+
     content.innerHTML = `
         <div class="task-detail-header">
             <h2 class="task-detail-title">${waypoint.name}</h2>
@@ -451,26 +492,39 @@ function showActiveTaskDetail(waypoint, taskIndex) {
                 <span>Úkol ${taskIndex + 1} z ${GAME_DATA.waypoints.length}</span>
             </div>
         </div>
-        
+
         <div class="task-detail-description">
             ${waypoint.description}
         </div>
-        
+
+        ${imageHtml}
+
         <div class="task-question-section">
             <div class="question-label">
                 <i class="fas fa-circle-question"></i>
                 ${waypoint.question}
             </div>
-            <input 
-                type="text" 
-                class="answer-input" 
-                id="answerInput" 
-                placeholder="Zadejte odpověď..."
-            >
-            <button class="btn btn-primary" onclick="submitAnswer(${taskIndex})">
-                <i class="fas fa-paper-plane"></i>
-                Odeslat odpověď
-            </button>
+            ${answerHtml}
+        </div>
+    `;
+}
+
+function showPendingTaskDetail(waypoint, taskIndex) {
+    const content = document.getElementById('taskDetailContent');
+
+    content.innerHTML = `
+        <div class="task-detail-header">
+            <h2 class="task-detail-title">${waypoint.name}</h2>
+            <div class="task-detail-location">
+                <i class="fas fa-map-marker-alt"></i>
+                <span>Úkol ${taskIndex + 1} z ${GAME_DATA.waypoints.length}</span>
+            </div>
+        </div>
+
+        <div class="task-completed-message pending">
+            <i class="fas fa-hourglass-half"></i>
+            <h3>Čeká na schválení</h3>
+            <p>Tvoji fotku musí nejdřív schválit hostitel hry.</p>
         </div>
     `;
 }
@@ -514,6 +568,179 @@ function saveProgress(waypointIndex) {
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: `game_id=${encodeURIComponent(GAME_DATA.id)}&waypoint_index=${waypointIndex}${sessionParam}`
     }).catch(err => console.error('Nepodařilo se uložit postup:', err));
+}
+
+// ==================== FOTO ODPOVĚĎ ====================
+let selectedPhotoFile = null;
+
+function handlePhotoAnswerSelected(fileInput) {
+    const file = fileInput.files[0];
+    if (!file) return;
+
+    selectedPhotoFile = file;
+
+    const preview = document.getElementById('photoAnswerPreview');
+    const reader = new FileReader();
+    reader.onload = e => {
+        preview.innerHTML = `<img src="${e.target.result}" alt="Náhled fotky">`;
+    };
+    reader.readAsDataURL(file);
+
+    document.getElementById('submitPhotoBtn').classList.remove('d-none');
+}
+
+async function submitPhotoAnswer(taskIndex) {
+    if (!selectedPhotoFile) return;
+
+    const btn = document.getElementById('submitPhotoBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Odesílám...';
+
+    const formData = new FormData();
+    formData.append('image', selectedPhotoFile);
+    formData.append('game_id', GAME_DATA.id);
+    formData.append('waypoint_index', taskIndex);
+    if (SESSION_CODE) formData.append('session', SESSION_CODE);
+
+    try {
+        const res = await fetch('submit_photo_answer.php', {
+            method: 'POST',
+            body: formData,
+        });
+        const data = await res.json();
+
+        if (!data.success) throw new Error(data.error || 'Odeslání se nezdařilo');
+
+        selectedPhotoFile = null;
+
+        if (data.status === 'approved') {
+            completeTask(taskIndex, { skipSave: true });
+        } else {
+            GAME_DATA.waypoints[taskIndex].pending = true;
+            renderTaskList();
+            showPendingTaskDetail(GAME_DATA.waypoints[taskIndex], taskIndex);
+            showNotification('Fotka odeslána! Čeká na schválení hostitelem.');
+        }
+    } catch (err) {
+        alert('Nepodařilo se odeslat fotku: ' + err.message);
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-paper-plane"></i> Odeslat jako důkaz';
+    }
+}
+
+// ==================== ČEKÁNÍ NA SCHVÁLENÍ (HRÁČ) ====================
+function startPendingPolling() {
+    if (!SESSION_CODE || pendingPollInterval) return;
+
+    pendingPollInterval = setInterval(async () => {
+        const pendingIndexes = GAME_DATA.waypoints
+            .map((w, i) => w.pending ? i : null)
+            .filter(i => i !== null);
+
+        for (const index of pendingIndexes) {
+            try {
+                const res = await fetch(`submission_status.php?game_id=${encodeURIComponent(GAME_DATA.id)}&waypoint_index=${index}&session=${encodeURIComponent(SESSION_CODE)}`);
+                const data = await res.json();
+                if (!data.success) continue;
+
+                if (data.status === 'approved') {
+                    completeTask(index, { skipSave: true });
+                    showNotification(`Fotka u úkolu "${GAME_DATA.waypoints[index].name}" byla schválena!`);
+                } else if (data.status === 'rejected') {
+                    GAME_DATA.waypoints[index].pending = false;
+                    renderTaskList();
+                    showNotification(`Fotka u úkolu "${GAME_DATA.waypoints[index].name}" byla zamítnuta. Zkus to znovu.`);
+                }
+            } catch (err) { /* zkusí se to znovu při dalším pollu */ }
+        }
+    }, 10000);
+}
+
+// ==================== SCHVALOVÁNÍ FOTEK (HOSTITEL) ====================
+function toggleReview() {
+    const modal = document.getElementById('reviewModal');
+    modal.classList.toggle('active');
+
+    if (modal.classList.contains('active')) {
+        loadReviewQueue();
+        if (!reviewInterval) {
+            reviewInterval = setInterval(loadReviewQueue, 8000);
+        }
+    } else if (reviewInterval) {
+        clearInterval(reviewInterval);
+        reviewInterval = null;
+    }
+}
+
+async function loadReviewQueue() {
+    const body = document.getElementById('reviewBody');
+    try {
+        const res = await fetch(`review_submission.php?action=list&session=${encodeURIComponent(SESSION_CODE)}`);
+        const data = await res.json();
+
+        if (!data.success) throw new Error(data.error || 'Chyba');
+
+        updateReviewBadge(data.submissions.length);
+
+        if (data.submissions.length === 0) {
+            body.innerHTML = '<p>Žádné fotky nečekají na schválení.</p>';
+            return;
+        }
+
+        body.innerHTML = data.submissions.map(s => `
+            <div class="review-item">
+                <img src="${s.image_path}" alt="Nahraná fotka">
+                <div class="review-item-meta">
+                    <strong>${escapeHtml(s.user_name)}</strong> &middot; ${escapeHtml(s.waypoint_name)}
+                </div>
+                <div class="review-item-actions">
+                    <button class="btn btn-approve" onclick="reviewSubmission(${s.id}, 'approve')">
+                        <i class="fas fa-check"></i> Schválit
+                    </button>
+                    <button class="btn btn-reject" onclick="reviewSubmission(${s.id}, 'reject')">
+                        <i class="fas fa-times"></i> Zamítnout
+                    </button>
+                </div>
+            </div>
+        `).join('');
+    } catch (err) {
+        body.innerHTML = '<p>Nepodařilo se načíst čekající fotky.</p>';
+    }
+}
+
+async function reviewSubmission(submissionId, action) {
+    try {
+        const res = await fetch(`review_submission.php?action=${action}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: `submission_id=${submissionId}`,
+        });
+        const data = await res.json();
+        if (!data.success) throw new Error(data.error || 'Chyba');
+
+        loadReviewQueue();
+    } catch (err) {
+        alert('Nepodařilo se zpracovat: ' + err.message);
+    }
+}
+
+function updateReviewBadge(count) {
+    const badge = document.getElementById('reviewBadge');
+    if (!badge) return;
+    badge.textContent = count;
+    badge.classList.toggle('d-none', count === 0);
+}
+
+function startReviewBadgePolling() {
+    if (!GAME_DATA.is_host || reviewBadgeInterval) return;
+    const check = () => {
+        fetch(`review_submission.php?action=list&session=${encodeURIComponent(SESSION_CODE)}`)
+            .then(res => res.json())
+            .then(data => { if (data.success) updateReviewBadge(data.submissions.length); })
+            .catch(() => {});
+    };
+    check();
+    reviewBadgeInterval = setInterval(check, 15000);
 }
 
 // ==================== ŽEBŘÍČEK (SKUPINOVÁ HRA) ====================
@@ -595,12 +822,15 @@ function removeAccents(str) {
     return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 }
 
-function completeTask(taskIndex) {
+function completeTask(taskIndex, options = {}) {
     GAME_DATA.waypoints[taskIndex].completed = true;
+    GAME_DATA.waypoints[taskIndex].pending = false;
     completedTasks++;
 
-    saveProgress(taskIndex);
-    
+    if (!options.skipSave) {
+        saveProgress(taskIndex);
+    }
+
     // Aktualizuj marker
     updateMarker(taskIndex);
     
@@ -706,6 +936,11 @@ function initEventListeners() {
         if (leaderboardModal && event.target === leaderboardModal) {
             toggleLeaderboard();
         }
+
+        const reviewModal = document.getElementById('reviewModal');
+        if (reviewModal && event.target === reviewModal) {
+            toggleReview();
+        }
     });
 
     // ESC pro zavření modálů
@@ -724,6 +959,11 @@ function initEventListeners() {
             const leaderboardModal = document.getElementById('leaderboardModal');
             if (leaderboardModal && leaderboardModal.classList.contains('active')) {
                 toggleLeaderboard();
+            }
+
+            const reviewModal = document.getElementById('reviewModal');
+            if (reviewModal && reviewModal.classList.contains('active')) {
+                toggleReview();
             }
         }
     });

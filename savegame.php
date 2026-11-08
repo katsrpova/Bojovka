@@ -72,19 +72,29 @@ try {
     ]);
 
     $wpStmt = $pdo->prepare(
-        "INSERT INTO waypoints (game_id, order_index, name, description, question, answer, lat, lng)
-         VALUES (:game_id, :order_index, :name, :description, :question, :answer, :lat, :lng)"
+        "INSERT INTO waypoints (game_id, order_index, name, description, question, question_image, answer, answer_type, lat, lng)
+         VALUES (:game_id, :order_index, :name, :description, :question, :question_image, :answer, :answer_type, :lat, :lng)"
     );
     foreach ($waypoints as $index => $wp) {
+        $answerType = ($wp['answer_type'] ?? 'text') === 'photo' ? 'photo' : 'text';
+
+        // Obrázek musí být cesta, kterou skutečně vrátil upload_question_image.php
+        $questionImage = $wp['question_image'] ?? null;
+        if ($questionImage !== null && !preg_match('#^uploads/questions/[a-f0-9]{32}\.(jpg|png|webp|gif)$#', $questionImage)) {
+            $questionImage = null;
+        }
+
         $wpStmt->execute([
-            'game_id'     => $gameId,
-            'order_index' => $index,
-            'name'        => $wp['name'] ?? ('Úkol ' . ($index + 1)),
-            'description' => $wp['description'] ?? '',
-            'question'    => $wp['question'] ?? '',
-            'answer'      => $wp['answer'] ?? '',
-            'lat'         => $wp['lat'],
-            'lng'         => $wp['lng'],
+            'game_id'        => $gameId,
+            'order_index'    => $index,
+            'name'           => $wp['name'] ?? ('Úkol ' . ($index + 1)),
+            'description'    => $wp['description'] ?? '',
+            'question'       => $wp['question'] ?? '',
+            'question_image' => $questionImage,
+            'answer'         => $answerType === 'text' ? ($wp['answer'] ?? '') : '',
+            'answer_type'    => $answerType,
+            'lat'            => $wp['lat'],
+            'lng'            => $wp['lng'],
         ]);
     }
 

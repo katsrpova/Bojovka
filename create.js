@@ -134,7 +134,9 @@ function addWaypoint(latlng) {
         name: `Úkol ${waypointCounter}`,
         description: '',
         question: '',
+        question_image: null,
         answer: '',
+        answer_type: 'text',
         type: 'checkpoint'
     };
     
@@ -190,6 +192,53 @@ function updateWaypointAnswer(id, answer) {
     }
 }
 
+function updateWaypointAnswerType(id, answerType) {
+    const wp = waypoints.find(w => w.id === id);
+    if (wp) {
+        wp.answer_type = answerType;
+        updateWaypointsData();
+        updateTasksList();
+    }
+}
+
+async function handleQuestionImageUpload(id, fileInput) {
+    const wp = waypoints.find(w => w.id === id);
+    if (!wp || !fileInput.files[0]) return;
+
+    const formData = new FormData();
+    formData.append('image', fileInput.files[0]);
+
+    const taskItem = document.querySelector(`.task-item[data-id="${id}"]`);
+    const statusEl = taskItem ? taskItem.querySelector('.image-upload-status') : null;
+    if (statusEl) statusEl.textContent = 'Nahrávám obrázek...';
+
+    try {
+        const res = await fetch('upload_question_image.php', {
+            method: 'POST',
+            body: formData,
+        });
+        const data = await res.json();
+
+        if (!data.success) throw new Error(data.error || 'Nahrání se nezdařilo');
+
+        wp.question_image = data.path;
+        updateWaypointsData();
+        updateTasksList();
+    } catch (err) {
+        alert('Nepodařilo se nahrát obrázek: ' + err.message);
+        if (statusEl) statusEl.textContent = '';
+    }
+}
+
+function removeWaypointImage(id) {
+    const wp = waypoints.find(w => w.id === id);
+    if (wp) {
+        wp.question_image = null;
+        updateWaypointsData();
+        updateTasksList();
+    }
+}
+
 function removeWaypoint(id) {
     const index = waypoints.findIndex(w => w.id === id);
     if (index === -1) return;
@@ -226,9 +275,9 @@ function updateTasksList() {
         <div class="task-item" data-id="${wp.id}">
             <div class="task-number">${wp.id}</div>
             <div class="task-content">
-                <input 
-                    type="text" 
-                    class="task-input" 
+                <input
+                    type="text"
+                    class="task-input"
                     value="${wp.name}"
                     placeholder="Název úkolu"
                     onchange="updateWaypointName(${wp.id}, this.value)"
@@ -238,6 +287,23 @@ function updateTasksList() {
                     placeholder="Popis úkolu / zadání..."
                     onchange="updateWaypointDescription(${wp.id}, this.value)"
                 >${wp.description}</textarea>
+
+                <div class="question-image-field">
+                    ${wp.question_image
+                        ? `<div class="question-image-preview">
+                               <img src="${wp.question_image}" alt="Obrázek k zadání">
+                               <button type="button" class="btn-remove-image" onclick="removeWaypointImage(${wp.id})" title="Odstranit obrázek">
+                                   <i class="fas fa-times"></i>
+                               </button>
+                           </div>`
+                        : `<label class="image-upload-label">
+                               <i class="fas fa-image"></i> Přidat obrázek k zadání
+                               <input type="file" accept="image/*" style="display:none" onchange="handleQuestionImageUpload(${wp.id}, this)">
+                           </label>`
+                    }
+                    <span class="image-upload-status"></span>
+                </div>
+
                 <input
                     type="text"
                     class="task-input"
@@ -245,13 +311,26 @@ function updateTasksList() {
                     placeholder="Otázka pro hráče"
                     onchange="updateWaypointQuestion(${wp.id}, this.value)"
                 >
-                <input
-                    type="text"
-                    class="task-input"
-                    value="${wp.answer}"
-                    placeholder="Správná odpověď"
-                    onchange="updateWaypointAnswer(${wp.id}, this.value)"
-                >
+
+                <div class="answer-type-toggle">
+                    <button type="button" class="answer-type-btn ${wp.answer_type === 'text' ? 'active' : ''}" onclick="updateWaypointAnswerType(${wp.id}, 'text')">
+                        <i class="fas fa-keyboard"></i> Textová odpověď
+                    </button>
+                    <button type="button" class="answer-type-btn ${wp.answer_type === 'photo' ? 'active' : ''}" onclick="updateWaypointAnswerType(${wp.id}, 'photo')">
+                        <i class="fas fa-camera"></i> Foto odpověď
+                    </button>
+                </div>
+
+                ${wp.answer_type === 'photo'
+                    ? `<p class="photo-answer-note"><i class="fas fa-info-circle"></i> Hráč nahraje fotku jako důkaz splnění. Sólo si splnění potvrdí sám, ve skupině ji schvaluje hostitel.</p>`
+                    : `<input
+                           type="text"
+                           class="task-input"
+                           value="${wp.answer}"
+                           placeholder="Správná odpověď"
+                           onchange="updateWaypointAnswer(${wp.id}, this.value)"
+                       >`
+                }
             </div>
             <button type="button" class="btn-delete" onclick="removeWaypoint(${wp.id})">
                 <i class="fas fa-trash"></i>
@@ -440,8 +519,12 @@ function initEventListeners() {
             }
         }
         
-        // Kontrola, zda všechny úkoly mají popis, otázku a odpověď
-        const emptyTasks = waypoints.filter(wp => !wp.description.trim() || !wp.question.trim() || !wp.answer.trim());
+        // Kontrola, zda všechny úkoly mají popis, otázku a (podle typu) odpověď nebo obrázek
+        const emptyTasks = waypoints.filter(wp => {
+            if (!wp.description.trim() || !wp.question.trim()) return true;
+            if (wp.answer_type === 'photo') return false;
+            return !wp.answer.trim();
+        });
         if (emptyTasks.length > 0) {
             if (!confirm(`${emptyTasks.length} úkol(y) nemají popis, otázku nebo odpověď. Hráči je pak nebudou moci splnit. Chceš pokračovat?`)) {
                 e.preventDefault();

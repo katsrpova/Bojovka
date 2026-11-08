@@ -6,3 +6,4 @@ mysql_data/data/*.json
 data/*.json
 games/*.json
 mysql_data/
+uploads/

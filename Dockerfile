@@ -14,8 +14,8 @@ RUN apt-get update && apt-get install -y \
 RUN a2enmod rewrite
 
 # Nastav práva pro složky kam PHP zapisuje
-RUN mkdir -p /var/www/html/data /var/www/html/games \
-    && chown -R www-data:www-data /var/www/html/data /var/www/html/games
+RUN mkdir -p /var/www/html/data /var/www/html/games /var/www/html/uploads/questions /var/www/html/uploads/answers \
+    && chown -R www-data:www-data /var/www/html/data /var/www/html/games /var/www/html/uploads
 
 # Apache konfigurace - povol .htaccess
 RUN echo '<Directory /var/www/html>\n\

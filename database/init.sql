@@ -28,7 +28,9 @@ CREATE TABLE waypoints (
     name VARCHAR(255) NOT NULL,
     description TEXT,
     question TEXT,
+    question_image VARCHAR(255) NULL,
     answer VARCHAR(255),
+    answer_type VARCHAR(10) NOT NULL DEFAULT 'text',
     lat DECIMAL(10, 8) NOT NULL,
     lng DECIMAL(11, 8) NOT NULL,
     FOREIGN KEY (game_id) REFERENCES games(id) ON DELETE CASCADE
@@ -56,6 +58,22 @@ CREATE TABLE game_progress (
     completed_at TIMESTAMP NULL,
     FOREIGN KEY (user_id) REFERENCES users(id),
     FOREIGN KEY (game_id) REFERENCES games(id),
+    FOREIGN KEY (session_code) REFERENCES game_sessions(code)
+);
+
+CREATE TABLE waypoint_submissions (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    waypoint_id INT NOT NULL,
+    user_id VARCHAR(100) NOT NULL,
+    game_id VARCHAR(100) NOT NULL,
+    session_code VARCHAR(10) NULL,
+    image_path VARCHAR(255) NOT NULL,
+    status VARCHAR(10) NOT NULL DEFAULT 'pending',
+    submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    reviewed_at TIMESTAMP NULL,
+    FOREIGN KEY (waypoint_id) REFERENCES waypoints(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id),
+    FOREIGN KEY (game_id) REFERENCES games(id) ON DELETE CASCADE,
     FOREIGN KEY (session_code) REFERENCES game_sessions(code)
 );
 
