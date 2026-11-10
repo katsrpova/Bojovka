@@ -47,6 +47,10 @@ $adventures = getDB()->query(
                 <div class="user-avatar">
                     <?php echo $isAnonymous ? '🦊' : '👤'; ?>
                 </div>
+                <button class="btn-feedback" onclick="openFeedbackModal()">
+                    <i class="fas fa-comment-dots"></i>
+                    <span>Zpětná vazba</span>
+                </button>
                 <a href="logout.php" class="btn-logout">
                     <i class="fas fa-sign-out-alt"></i>
                     <span>Odhlásit</span>
@@ -227,6 +231,31 @@ $adventures = getDB()->query(
 </div>
 
 </div>
+
+    <!-- Feedback Modal -->
+    <div class="modal" id="feedbackModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-comment-dots"></i> Zpětná vazba</h3>
+                <button class="btn-close" onclick="closeFeedbackModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">Název</label>
+                    <input type="text" class="form-input" id="feedbackTitle" placeholder="Stručný název..." maxlength="150">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Zpráva</label>
+                    <textarea class="form-textarea" id="feedbackMessage" placeholder="Co se ti líbí, co chybí, co nefunguje..." maxlength="5000"></textarea>
+                </div>
+                <button class="btn btn-primary" onclick="submitFeedback()" id="feedbackSubmitBtn">
+                    <i class="fas fa-paper-plane"></i> Odeslat
+                </button>
+            </div>
+        </div>
+    </div>
 
     <script src="dashboard.js?v=<?php echo @filemtime(__DIR__ . '/dashboard.js'); ?>"></script>
 </body>

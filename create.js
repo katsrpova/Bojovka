@@ -535,3 +535,61 @@ function initEventListeners() {
         console.log('Submitting game with', waypoints.length, 'waypoints');
     });
 }
+
+// ==================== ZPĚTNÁ VAZBA ====================
+function openFeedbackModal() {
+    document.getElementById('feedbackModal').classList.add('active');
+}
+
+function closeFeedbackModal() {
+    document.getElementById('feedbackModal').classList.remove('active');
+    document.getElementById('feedbackTitle').value = '';
+    document.getElementById('feedbackMessage').value = '';
+}
+
+async function submitFeedback() {
+    const title = document.getElementById('feedbackTitle').value.trim();
+    const message = document.getElementById('feedbackMessage').value.trim();
+
+    if (!title || !message) {
+        alert('Vyplňte prosím název i zprávu.');
+        return;
+    }
+
+    const btn = document.getElementById('feedbackSubmitBtn');
+    btn.disabled = true;
+
+    try {
+        const res = await fetch('feedback.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: `title=${encodeURIComponent(title)}&message=${encodeURIComponent(message)}`,
+        });
+        const data = await res.json();
+
+        if (!data.success) throw new Error(data.error || 'Odeslání se nezdařilo');
+
+        alert('Díky za zpětnou vazbu!');
+        closeFeedbackModal();
+    } catch (err) {
+        alert('Nepodařilo se odeslat: ' + err.message);
+    } finally {
+        btn.disabled = false;
+    }
+}
+
+document.addEventListener('click', function(event) {
+    const feedbackModal = document.getElementById('feedbackModal');
+    if (feedbackModal && event.target === feedbackModal) {
+        closeFeedbackModal();
+    }
+});
+
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        const feedbackModal = document.getElementById('feedbackModal');
+        if (feedbackModal && feedbackModal.classList.contains('active')) {
+            closeFeedbackModal();
+        }
+    }
+});

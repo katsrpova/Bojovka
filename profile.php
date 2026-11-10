@@ -92,6 +92,10 @@ $userStats = [
             <div class="user-avatar-small">
                 <?php echo $isAnonymous ? '🦊' : '👤'; ?>
             </div>
+            <button class="btn-feedback" onclick="openFeedbackModal()">
+                <i class="fas fa-comment-dots"></i>
+                <span>Zpětná vazba</span>
+            </button>
             <a href="logout.php" class="logout-btn">
                 <i class="fas fa-sign-out-alt"></i> Odhlásit
             </a>
@@ -270,6 +274,31 @@ $userStats = [
         </div>
     </div>
 
+    <!-- Feedback Modal -->
+    <div class="modal" id="feedbackModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-comment-dots"></i> Zpětná vazba</h3>
+                <button class="btn-close" onclick="closeFeedbackModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">Název</label>
+                    <input type="text" class="form-input" id="feedbackTitle" placeholder="Stručný název..." maxlength="150">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Zpráva</label>
+                    <textarea class="form-textarea" id="feedbackMessage" placeholder="Co se ti líbí, co chybí, co nefunguje..." maxlength="5000"></textarea>
+                </div>
+                <button class="btn btn-primary" onclick="submitFeedback()" id="feedbackSubmitBtn">
+                    <i class="fas fa-paper-plane"></i> Odeslat
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script>
         // Tab switching
         function switchTab(tabName) {
@@ -283,6 +312,64 @@ $userStats = [
             });
             document.querySelector(`.profile-subtab-btn[data-tab="${tabName}"]`).classList.add('active');
         }
+
+        // Zpětná vazba
+        function openFeedbackModal() {
+            document.getElementById('feedbackModal').classList.add('active');
+        }
+
+        function closeFeedbackModal() {
+            document.getElementById('feedbackModal').classList.remove('active');
+            document.getElementById('feedbackTitle').value = '';
+            document.getElementById('feedbackMessage').value = '';
+        }
+
+        async function submitFeedback() {
+            const title = document.getElementById('feedbackTitle').value.trim();
+            const message = document.getElementById('feedbackMessage').value.trim();
+
+            if (!title || !message) {
+                alert('Vyplňte prosím název i zprávu.');
+                return;
+            }
+
+            const btn = document.getElementById('feedbackSubmitBtn');
+            btn.disabled = true;
+
+            try {
+                const res = await fetch('feedback.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: `title=${encodeURIComponent(title)}&message=${encodeURIComponent(message)}`,
+                });
+                const data = await res.json();
+
+                if (!data.success) throw new Error(data.error || 'Odeslání se nezdařilo');
+
+                alert('Díky za zpětnou vazbu!');
+                closeFeedbackModal();
+            } catch (err) {
+                alert('Nepodařilo se odeslat: ' + err.message);
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        document.addEventListener('click', function(event) {
+            const feedbackModal = document.getElementById('feedbackModal');
+            if (event.target === feedbackModal) {
+                closeFeedbackModal();
+            }
+        });
+
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                const feedbackModal = document.getElementById('feedbackModal');
+                if (feedbackModal.classList.contains('active')) {
+                    closeFeedbackModal();
+                }
+            }
+        });
     </script>
 </body>
 </html>

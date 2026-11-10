@@ -79,11 +79,58 @@ function joinByCode() {
     window.location.href = `play.php?code=${code}`;
 }
 
+// ==================== ZPĚTNÁ VAZBA ====================
+function openFeedbackModal() {
+    document.getElementById('feedbackModal').classList.add('active');
+}
+
+function closeFeedbackModal() {
+    document.getElementById('feedbackModal').classList.remove('active');
+    document.getElementById('feedbackTitle').value = '';
+    document.getElementById('feedbackMessage').value = '';
+}
+
+async function submitFeedback() {
+    const title = document.getElementById('feedbackTitle').value.trim();
+    const message = document.getElementById('feedbackMessage').value.trim();
+
+    if (!title || !message) {
+        alert('Vyplňte prosím název i zprávu.');
+        return;
+    }
+
+    const btn = document.getElementById('feedbackSubmitBtn');
+    btn.disabled = true;
+
+    try {
+        const res = await fetch('feedback.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: `title=${encodeURIComponent(title)}&message=${encodeURIComponent(message)}`,
+        });
+        const data = await res.json();
+
+        if (!data.success) throw new Error(data.error || 'Odeslání se nezdařilo');
+
+        alert('Díky za zpětnou vazbu!');
+        closeFeedbackModal();
+    } catch (err) {
+        alert('Nepodařilo se odeslat: ' + err.message);
+    } finally {
+        btn.disabled = false;
+    }
+}
+
 // Close modal on outside click
 document.addEventListener('click', function(event) {
     const modal = document.getElementById('joinModal');
     if (event.target === modal) {
         closeJoinModal();
+    }
+
+    const feedbackModal = document.getElementById('feedbackModal');
+    if (event.target === feedbackModal) {
+        closeFeedbackModal();
     }
 });
 
@@ -91,6 +138,7 @@ document.addEventListener('click', function(event) {
 document.addEventListener('keydown', function(event) {
     if (event.key === 'Escape') {
         closeJoinModal();
+        closeFeedbackModal();
     }
 });
 

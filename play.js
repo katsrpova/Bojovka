@@ -96,6 +96,7 @@ function addWaypointMarkers() {
 
         const marker = L.marker([waypoint.lat, waypoint.lng], { icon: icon }).addTo(map);
         marker.bindPopup(`<strong>${waypoint.name}</strong>`);
+        marker.on('click', () => openTaskFromMarker(index));
         markers.push(marker);
     });
 }
@@ -428,6 +429,13 @@ function showTaskList() {
         const bounds = routeLine.getBounds();
         map.fitBounds(bounds, { padding: [50, 50] });
     }
+}
+
+// Kliknutí na marker na mapě otevře detail úkolu stejně jako kliknutí v seznamu
+// (pokud je úkol odemčený/dokončený/čeká na schválení - zamčené úkoly se neotevřou).
+function openTaskFromMarker(taskIndex) {
+    document.getElementById('taskPanel').classList.remove('hidden');
+    openTaskDetail(taskIndex);
 }
 
 function openTaskDetail(taskIndex) {
