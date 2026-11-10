@@ -1,0 +1,31 @@
+services:
+  web:
+    build: .
+    container_name: bojovka_web
+    restart: unless-stopped
+    volumes:
+      - .:/var/www/html
+    depends_on:
+      - mysql
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.bojovka.rule=Host(`bojovka1.cz`) || Host(`www.bojovka1.cz`)"
+      - "traefik.http.routers.bojovka.entrypoints=websecure"
+      - "traefik.http.routers.bojovka.tls.certresolver=letsencrypt"
+      - "traefik.http.services.bojovka.loadbalancer.server.port=80"
+
+  mysql:
+    image: mysql:8.0
+    container_name: bojovka_db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASS}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASS}
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+
+volumes:
+  mysql_data:
