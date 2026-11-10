@@ -9,7 +9,7 @@ services:
       - mysql
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.bojovka.rule=Host(`bojovka1.cz`) || Host(`www.bojovka1.cz`)"
+      - "traefik.http.routers.bojovka.rule=Host(`srv2140180.hstgr.cloud`)"
       - "traefik.http.routers.bojovka.entrypoints=websecure"
       - "traefik.http.routers.bojovka.tls.certresolver=letsencrypt"
       - "traefik.http.services.bojovka.loadbalancer.server.port=80"
