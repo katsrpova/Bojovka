@@ -29,7 +29,7 @@ $adventures = getDB()->query(
     <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline' https://api.mapy.cz;">
     <title>BOJOVKA - Dashboard</title>
     <link rel="stylesheet" href="dashboard.css?v=<?php echo @filemtime(__DIR__ . '/dashboard.css'); ?>">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
 </head>
 <body>
     <!-- Top Header -->
